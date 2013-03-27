@@ -198,8 +198,6 @@ sub draw {
     }
     push @t, $ab, "\n";
 
-    use Data::Dump; dd \@dwidths;
-
     # draw data rows
     $j = 0;
     for my $r (@{$self->{rows}}) {
@@ -208,7 +206,6 @@ sub draw {
         $i = 0;
         for my $c (@$r) {
             $c //= ''; $dwidths[$j][$i] //= 0;
-            dd [$c, $dwidths[$j][$i]];
             push @t, $c, (" " x ($cwidths[$i] - $dwidths[$j][$i]));
             $i++;
             push @t, $bb, ($i == @$cols ? $ch->[3][2] : $ch->[3][1]), $ab;
