@@ -201,11 +201,14 @@ sub draw {
 
     # draw data rows
     $j = 0;
-    for my $r (@{$self->{rows}}) {
+    for my $r0 (@{$self->{rows}}) {
+        my @r = @$r0;
+        $r[@cwidths-1] = undef if @r < @cwidths; # pad with undefs
+
         # draw data row
         push @t, $bb, $ch->[3][0], $ab;
         $i = 0;
-        for my $c (@$r) {
+        for my $c (@r) {
             $c //= ''; $dwidths[$j][$i] //= 0;
             push @t, $c, (" " x ($cwidths[$i] - $dwidths[$j][$i]));
             $i++;
