@@ -337,8 +337,9 @@ For border styles, here are the characters to supply:
  L   M   N
  StttUtttV        Bottom border characters
 
-See existing border styles in the source code for examples. Format for
-C<border_chars>:
+Each character must have visual width of 1.
+
+See existing border styles in the source code for examples. Format for C<chars>:
 
  [[A, b, C, D],
   [E, F, G],
