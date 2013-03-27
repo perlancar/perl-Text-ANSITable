@@ -76,6 +76,7 @@ has color_theme  => (
         die "Unknown color theme '$_[0]'" unless $color_themes{$_[0]};
     },
 );
+has draw_row_separator => (is => 'rw', default => sub { 0 });
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -213,6 +214,17 @@ sub draw {
         push @t, "\n";
 
         # draw separator between data rows
+        if ($self->{draw_row_separator} && $j < @{$self->{rows}}-1) {
+            push @t, $bb, $ch->[4][0];
+            $i = 0;
+            for my $c (@$cols) {
+                push @t, $ch->[4][1] x $cwidths[$i];
+                $i++;
+                push @t, $i == @$cols ? $ch->[4][3] : $ch->[4][2];
+            }
+            push @t, $ab, "\n";
+        }
+
         $j++;
     }
 
@@ -299,6 +311,10 @@ C<%Text::ANSITable::border_styles>.
 
 Name of color theme to use when drawing the table. Default is C<default>, or
 C<no_color>. For available color themes, see C<%Text::ANSITable::color_themes>.
+
+=head2 draw_row_separator => BOOL (default 0)
+
+Whether to draw separator between rows.
 
 =back
 
