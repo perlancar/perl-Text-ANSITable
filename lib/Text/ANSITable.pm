@@ -15,8 +15,6 @@ use Text::ANSI::Util 'ta_mbswidth_height';
 our %border_styles = (
 
     single_ascii => {
-        #charset => '',
-        #encoding => '',
         chars => [
             ['.', '-', '+', '.'],
             ['|', '|', '|'],
@@ -30,8 +28,6 @@ our %border_styles = (
     },
 
     single_eascii => {
-        #charset => '',
-        #encoding => '',
         chars => [
             ['l', 'q', 'w', 'k'],
             ['x', 'x', 'x'],
@@ -44,11 +40,78 @@ our %border_styles = (
         after_draw_border  => "\x1b(B",
     },
 
-    #single_utf8   => {
-    #    charset  => 'utf8',
-    #    encoding => 'utf8',
-    #    ...
-    #}
+    singleh_eascii => {
+        chars => [
+            ['q', 'q', 'q', 'q'],
+            [' ', ' ', ' '],
+            ['q', 'q', 'q', 'q'],
+            [' ', ' ', ' '],
+            ['q', 'q', 'q', 'q'],
+            ['q', 'q', 'q', 'q'],
+        ],
+        before_draw_border => "\x1b(0",
+        after_draw_border  => "\x1b(B",
+    },
+
+    # singlev_eascii => ...
+
+    single_utf8 => {
+        chars => [
+            ["\x{250c}","\x{2500}","\x{252c}","\x{2510}"],
+            ["\x{2502}","\x{2502}","\x{2502}"],
+            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
+            ["\x{2502}","\x{2502}","\x{2502}"],
+            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
+            ["\x{2514}","\x{2500}","\x{2534}","\x{2518}"],
+        ],
+        before_draw_border => "",
+        after_draw_border  => "",
+    },
+
+    csingle_utf8 => {
+        summary => 'Curved single border',
+        chars => [
+            ["\x{256d}","\x{2500}","\x{252c}","\x{256e}"],
+            ["\x{2502}","\x{2502}","\x{2502}"],
+            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
+            ["\x{2502}","\x{2502}","\x{2502}"],
+            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
+            ["\x{2570}","\x{2500}","\x{2534}","\x{256f}"],
+        ],
+        before_draw_border => "",
+        after_draw_border  => "",
+    },
+
+    #bsingle_utf8 => {
+    #    summary => 'Bold single border',
+    #},
+
+    #vbsingle_utf8 => {
+    #    summary => 'Vertically-bold single border',
+    #},
+
+    #hbsingle_utf8 => {
+    #    summary => 'Horizontally-bold single border',
+    #},
+
+    double_utf8 => {
+        chars => [
+            ["\x{2554}","\x{2550}","\x{2566}","\x{2557}"],
+            ["\x{2551}","\x{2551}","\x{2551}"],
+            ["\x{2560}","\x{2550}","\x{256c}","\x{2563}"],
+            ["\x{2551}","\x{2551}","\x{2551}"],
+            ["\x{2560}","\x{2550}","\x{256c}","\x{2563}"],
+            ["\x{255a}","\x{2550}","\x{2569}","\x{255d}"],
+        ],
+        before_draw_border => "",
+        after_draw_border  => "",
+    },
+
+    #double_single_utf8 => {
+    #    summary => 'Double border for header, single border for data',
+    #    before_draw_border => "",
+    #    after_draw_border  => "",
+    #},
 
 );
 
@@ -341,7 +404,14 @@ Draw the table and return the result. Or you can just stringify the string:
 
  "$t"
 
-=head2
+
+=head1 FAQ
+
+=head2 I'm getting 'Wide character in print' error message when I use utf8 border styles!
+
+Add something like this first before printing to your output:
+
+ binmode(STDOUT, ":utf8");
 
 
 =head1 BORDER STYLES
@@ -360,12 +430,14 @@ Each character must have visual width of 1.
 
 See existing border styles in the source code for examples. Format for C<chars>:
 
- [[A, b, C, D],
-  [E, F, G],
-  [H, i, J, K],
-  [L, M, N],
-  [O, p, Q, R],
-  [S, t, U, V]]
+ [
+   [A, b, C, D],
+   [E, F, G],
+   [H, i, J, K],
+   [L, M, N],
+   [O, p, Q, R],
+   [S, t, U, V],
+ ]
 
 
 =head1 SEE ALSO
