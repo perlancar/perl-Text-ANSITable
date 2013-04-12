@@ -356,15 +356,18 @@ sub draw {
 
 =head1 SYNOPSIS
 
+ use 5.010;
  use Text::ANSITable;
-
- my $t = Text::ANSITable->new;
+ my $t = Text::ANSITable->new(
+     border_style => 'hdouble_single_utf8',
+ );
  $t->cols(["name", "color", "price"]);
  $t->add_row(["chiki"      , "yellow", 2000]);
  $t->add_row(["lays"       , "green" , 5000]);
  $t->add_row(["tao kae noi", "blue"  , 4500]);
  my $color = $t->cell(2, 1); # => "blue"
  $t->cell(2, 1, "red");
+ binmode(STDOUT, ":utf8");
  say $t;
 
 will print something like (but with color and extended ASCII characters where
@@ -372,6 +375,9 @@ supported by terminal):
 
 
 =head1 DESCRIPTION
+
+B<NOTE: THIS IS A VERY VERY VERY EARLY VERSION WHERE MOST THINGS ARE NOT EVEN
+IMPLEMENTED (BUT THE ABOVE SYNOPSIS WORKS THOUGH)>.
 
 This module is yet another text table formatter module like L<Text::ASCIITable>
 or L<Text::SimpleTable>, with the following differences:
