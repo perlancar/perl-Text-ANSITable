@@ -3,6 +3,7 @@ package Text::ANSITable;
 use 5.010;
 use strict;
 use warnings;
+use overload '""' => 'draw'; # '@{}' => 'addrow_overload',
 use Moo;
 
 use List::Util 'first';
