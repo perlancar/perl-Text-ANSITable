@@ -1,6 +1,6 @@
 package Text::ANSITable;
 
-use 5.010;
+use 5.010001;
 use strict;
 use warnings;
 use overload '""' => 'draw'; # '@{}' => 'addrow_overload',
@@ -354,6 +354,8 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
+=for Pod::Coverage ^(BUILD)$
+
 =head1 SYNOPSIS
 
  use 5.010;
@@ -382,7 +384,7 @@ IMPLEMENTED (BUT THE ABOVE SYNOPSIS WORKS THOUGH)>.
 This module is yet another text table formatter module like L<Text::ASCIITable>
 or L<Text::SimpleTable>, with the following differences:
 
-=over 4
+=over
 
 =item * Colors and color themes
 
@@ -431,8 +433,6 @@ C<no_color>. For available color themes, see C<%Text::ANSITable::color_themes>.
 =head2 draw_row_separator => BOOL (default 0)
 
 Whether to draw separator between rows.
-
-=back
 
 
 =head1 METHODS
