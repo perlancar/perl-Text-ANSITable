@@ -497,6 +497,8 @@ To list available border styles:
 
  say $_ for $t->list_border_styles;
 
+Or you can also run the provided B<ansitable-list-border-styles> script.
+
 Border styles are searched in C<Text::ANSITable::BorderStyle::*> modules
 (asciibetically), in the C<%border_styles> variable. Hash keys are border style
 names, hash values are border style specifications.
@@ -541,6 +543,8 @@ Each character must have visual width of 1.
 To list available color themes:
 
  say $_ for $t->list_color_themes;
+
+Or you can also run the provided B<ansitable-list-color-themes> script.
 
 Color themes are searched in C<Text::ANSITable::ColorTheme::*> modules
 (asciibetically), in the C<%color_themes> variable. Hash keys are color theme

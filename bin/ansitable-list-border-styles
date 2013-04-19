@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use Text::ANSITable;
+
+binmode(STDOUT, ":utf8");
+
+my $t = Text::ANSITable->new;
+
+if ($ARGV[0]) {
+    $t->border_style($ARGV[0]);
+}
+
+my $all_bs = $t->list_border_styles(1);
+
+$t->cols(['name', 'summary', 'box_chars', 'utf8']);
+for my $name (sort keys %$all_bs) {
+    my $bs = $all_bs->{$name};
+    $t->add_row(
+        [$name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0]);
+}
+
+say "Tip: you can run me with border style name as argument to try it out.";
+say $t->draw;
+
+#ABSTRACT: Display a list of known border styles
+#PODNAME: ansitable-list-border-styles
