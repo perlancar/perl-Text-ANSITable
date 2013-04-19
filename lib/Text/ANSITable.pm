@@ -34,7 +34,7 @@ has use_utf8 => (
             (($ENV{LANG} // "") =~ /utf-?8/i ? 1:undef) // 1;
     },
 );
-has cols => (
+has columns => (
     is      => 'rw',
     default => sub { [] },
 );
@@ -204,7 +204,7 @@ sub cell {
     my $col     = shift;
 
     unless (looks_like_number($col)) {
-        my $n = first { $_ eq $col } @{ $self->{cols} };
+        my $n = first { $_ eq $col } @{ $self->{columns} };
         die "Unknown column name '$col'" unless defined $n;
         $col = $n;
     }
@@ -227,7 +227,7 @@ sub draw {
     my @hwidths; # header's widths
     my $hheight = 0;
     $i = 0;
-    for my $c (@{ $self->{cols} }) {
+    for my $c (@{ $self->{columns} }) {
         my $wh = ta_mbswidth_height($c);
         my $w = $wh->[0];
         $w = 0 if $w < 0;
@@ -263,7 +263,7 @@ sub draw {
 
     my $bb = $bs->{box_chars} ? "\e(0" : "";
     my $ab = $bs->{box_chars} ? "\e(B" : "";
-    my $cols = $self->{cols};
+    my $cols = $self->{columns};
 
     my @t;
 
@@ -363,7 +363,7 @@ sub draw {
  $t->color_theme('default_256'); # if not, it picks a nice default for you
 
  # fill data
- $t->cols(["name", "color", "price"]);
+ $t->columns(["name", "color", "price"]);
  $t->add_row(["chiki"      , "yellow", 2000]);
  $t->add_row(["lays"       , "green" , 5000]);
  $t->add_row(["tao kae noi", "blue"  , 4500]);
@@ -398,8 +398,8 @@ Columns containing wide characters stay aligned.
 =back
 
 Compared to Text::ASCIITable, it uses C<lower_case> method/attr names instead of
-C<CamelCase>, and it uses arrayref for C<cols> and C<add_row>. When specifying
-border styles, the order of characters are slightly different.
+C<CamelCase>, and it uses arrayref for C<columns> and C<add_row>. When
+specifying border styles, the order of characters are slightly different.
 
 It uses L<Moo> object system.
 
@@ -410,7 +410,7 @@ It uses L<Moo> object system.
 
 Table contents.
 
-=head2 cols => ARRAY OF STR
+=head2 columns => ARRAY OF STR
 
 Column names.
 
