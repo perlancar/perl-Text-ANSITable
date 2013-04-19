@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use Text::ANSITable;
+use Text::ASCIITable;
+
+#binmode(STDOUT, ":utf8");
+
+my $t = Text::ANSITable->new;
+my $all_bs = $t->list_border_styles(1);
+
+$t = Text::ASCIITable->new;
+$t->setCols('name', 'summary', 'box_chars', 'utf8');
+for my $name (sort keys %$all_bs) {
+    my $bs = $all_bs->{$name};
+    $t->addRow(
+        $name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0);
+}
+
+print $t;
+
+#ABSTRACT: Display a list of known border styles using Text::ASCIITable (temp script)
+#PODNAME: ansitable-list-border-styles-using-asciitable
