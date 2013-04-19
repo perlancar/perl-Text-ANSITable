@@ -171,9 +171,50 @@ our %border_styles = (
     },
 
 
+    # single, outer only
+
+    singleo_ascii => {
+        summary => 'Single, outer only',
+        chars => [
+            ['.','-','-','.'],
+            ['|',' ','|'],
+            ['|',' ',' ','|'],
+            ['|',' ','|'],
+            ['|',' ',' ','|'],
+            ['`','-','-',"'"],
+        ],
+    },
+
+    singleo_boxchar => {
+        summary => 'Single, outer only',
+        chars => [
+            ['l','q','q','k'],
+            ['x',' ','x'],
+            ['x',' ',' ','x'],
+            ['x',' ','x'],
+            ['x',' ',' ','x'],
+            ['m','q','q','j'],
+        ],
+        box_chars => 1,
+    },
+
+    singleo_utf8 => {
+        summary => 'Single, outer only',
+        chars => [
+            ["┌","─","─","┐"],
+            ["│"," ","│"],
+            ["│"," "," ","│"],
+            ["│"," ","│"],
+            ["│"," "," ","│"],
+            ["└","─","─","┘"],
+        ],
+        utf8 => 1,
+    },
+
+
     # curved single
 
-    csingle_utf8 => {
+    csingle => {
         summary => 'Curved single',
         chars => [
             ["╭","─","┬","╮"],
@@ -189,7 +230,7 @@ our %border_styles = (
 
     # bold single
 
-    bold_utf8 => {
+    bold => {
         summary => 'Bold',
         chars => [
             ["┏","━","┳","┓"],
@@ -203,19 +244,19 @@ our %border_styles = (
     },
 
 
-    #vbold_utf8 => {
+    #vbold => {
     #    summary => 'Vertically-bold',
     #},
 
 
-    #hbold_utf8 => {
+    #hbold => {
     #    summary => 'Horizontally-bold',
     #},
 
 
     # double
 
-    double_utf8 => {
+    double => {
         summary => 'Double',
         chars => [
             ["╔","═","╦","╗"],
@@ -226,6 +267,34 @@ our %border_styles = (
             ["╚","═","╩","╝"],
         ],
         utf8 => 1,
+    },
+
+    brick => {
+        summary => 'Single, bold on bottom right to give illusion of depth',
+        chars => [
+            ["┌","─","┬","┒"],
+            ["│","│","┃"],
+            ["├","─","┼","┨"],
+            ["│","│","┃"],
+            ["├","─","┼","┨"],
+            ["┕","━","┷","┛"],
+        ],
+        utf8 => 1,
+    },
+
+    bricko => {
+        summary => 'Single, outer only, '.
+            'bold on bottom right to give illusion of depth',
+        chars => [
+            ["┌","─","─","┒"],
+            ["│"," ","┃"],
+            ["│"," "," ","┃"],
+            ["│"," ","┃"],
+            ["│"," "," ","┃"],
+            ["┕","━","━","┛"],
+        ],
+        before_draw_border => "",
+        after_draw_border  => "",
     },
 
 );

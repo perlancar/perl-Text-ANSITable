@@ -54,7 +54,7 @@ sub BUILD {
     unless ($self->{border_style}) {
         my $bs;
         if ($self->use_utf8) {
-            $bs = 'csingle_utf8';
+            $bs = 'bricko';
         } elsif ($self->use_box_chars) {
             $bs = 'single_boxchar';
         } else {
