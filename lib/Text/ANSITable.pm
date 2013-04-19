@@ -3,7 +3,7 @@ package Text::ANSITable;
 use 5.010001;
 use strict;
 use warnings;
-use overload '""' => 'draw'; # '@{}' => 'addrow_overload',
+use Log::Any '$log';
 use Moo;
 
 use List::Util 'first';
@@ -13,197 +13,189 @@ use Text::ANSI::Util 'ta_mbswidth_height';
 
 # VERSION
 
-our %border_styles = (
-
-    single_ascii => {
-        chars => [
-            ['.', '-', '+', '.'],
-            ['|', '|', '|'],
-            ['+', '-', '+', '|'],
-            ['|', '|', '|'],
-            ['+', '-', '+', '|'],
-            ['`', '-', '+', "'"],
-        ],
-        before_draw_border => '',
-        after_draw_border  => '',
-    },
-
-    single_eascii => {
-        chars => [
-            ['l', 'q', 'w', 'k'],
-            ['x', 'x', 'x'],
-            ['t', 'q', 'n', 'u'],
-            ['x', 'x', 'x'],
-            ['t', 'q', 'n', 'u'],
-            ['m', 'q', 'v', 'j'],
-        ],
-        before_draw_border => "\x1b(0",
-        after_draw_border  => "\x1b(B",
-    },
-
-    singleh_eascii => {
-        summary => 'Single horizontal border',
-        chars => [
-            ['q', 'q', 'q', 'q'],
-            [' ', ' ', ' '],
-            ['q', 'q', 'q', 'q'],
-            [' ', ' ', ' '],
-            ['q', 'q', 'q', 'q'],
-            ['q', 'q', 'q', 'q'],
-        ],
-        before_draw_border => "\x1b(0",
-        after_draw_border  => "\x1b(B",
-    },
-
-    # singlev_eascii => ...
-
-    single_utf8 => {
-        summary => 'Single border',
-        chars => [
-            ["\x{250c}","\x{2500}","\x{252c}","\x{2510}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
-            ["\x{2514}","\x{2500}","\x{2534}","\x{2518}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    csingle_utf8 => {
-        summary => 'Curved single border',
-        chars => [
-            ["\x{256d}","\x{2500}","\x{252c}","\x{256e}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
-            ["\x{2570}","\x{2500}","\x{2534}","\x{256f}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    #bsingle_utf8 => {
-    #    summary => 'Bold single border',
-    #},
-
-    #vbsingle_utf8 => {
-    #    summary => 'Vertically-bold single border',
-    #},
-
-    #hbsingle_utf8 => {
-    #    summary => 'Horizontally-bold single border',
-    #},
-
-    double_utf8 => {
-        chars => [
-            ["\x{2554}","\x{2550}","\x{2566}","\x{2557}"],
-            ["\x{2551}","\x{2551}","\x{2551}"],
-            ["\x{2560}","\x{2550}","\x{256c}","\x{2563}"],
-            ["\x{2551}","\x{2551}","\x{2551}"],
-            ["\x{2560}","\x{2550}","\x{256c}","\x{2563}"],
-            ["\x{255a}","\x{2550}","\x{2569}","\x{255d}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    hdouble_single_utf8 => {
-        summary => 'Horizontally-double border for header, single border for data',
-        chars => [
-            ["\x{2552}","\x{2550}","\x{2564}","\x{2555}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{255e}","\x{2550}","\x{256a}","\x{2561}"],
-            ["\x{2502}","\x{2502}","\x{2502}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2524}"],
-            ["\x{2514}","\x{2500}","\x{2534}","\x{2518}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    single_shadowrb_utf8 => {
-        summary => 'Single border, bold on bottom right to give illusion of shadow/depth',
-        chars => [
-            ["\x{250c}","\x{2500}","\x{252c}","\x{2512}"],
-            ["\x{2502}","\x{2502}","\x{2503}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2528}"],
-            ["\x{2502}","\x{2502}","\x{2503}"],
-            ["\x{251c}","\x{2500}","\x{253c}","\x{2528}"],
-            ["\x{2515}","\x{2501}","\x{2537}","\x{251b}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    singleo_shadowrb_utf8 => {
-        summary => 'Single outer border, bold on bottom right to give illusion of shadow/depth',
-        chars => [
-            ["\x{250c}","\x{2500}","\x{2500}","\x{2512}"],
-            ["\x{2502}"," ","\x{2503}"],
-            ["\x{2502}"," "," ","\x{2503}"],
-            ["\x{2502}"," ","\x{2503}"],
-            ["\x{2502}"," "," ","\x{2503}"],
-            ["\x{2515}","\x{2501}","\x{2501}","\x{251b}"],
-        ],
-        before_draw_border => "",
-        after_draw_border  => "",
-    },
-
-    # singlei_utf8 => {
-    #     summary => 'Single inner border',
-    # },
-
-
-);
-
-our %color_themes = (
-
-    default => {
-    },
-
-    no_color => {
-    },
-
-);
-
-has cols         => (is => 'rw', default => sub { [] });
-has rows         => (is => 'rw', default => sub { [] });
-has border_style => (
-    is => 'rw',
-    isa => sub {
-        die "Unknown border style '$_[0]'" unless $border_styles{$_[0]};
+has use_color => (
+    is      => 'rw',
+    default => sub {
+        $ENV{COLOR} //
+            ((-t STDOUT) ?
+                 (($ENV{TERM} // "") =~ /256color/? '256' : '16') : 0);
     },
 );
-has color_theme  => (
-    is => 'rw',
-    isa => sub {
-        die "Unknown color theme '$_[0]'" unless $color_themes{$_[0]};
+has use_box_chars => (
+    is      => 'rw',
+    default => sub {
+        $ENV{BOX_CHARS} // 1;
     },
 );
-has draw_row_separator => (is => 'rw', default => sub { 0 });
+has use_utf8 => (
+    is      => 'rw',
+    default => sub {
+        $ENV{UTF8} //
+            (($ENV{LANG} // "") =~ /utf-?8/i ? 1:undef) // 1;
+    },
+);
+has cols => (
+    is      => 'rw',
+    default => sub { [] },
+);
+has rows => (
+    is      => 'rw',
+    default => sub { [] },
+);
+has display_row_separator => (
+    is      => 'rw',
+    default => sub { 0 },
+);
 
 sub BUILD {
     my ($self, $args) = @_;
 
-    # XXX detect terminal's capability to display extended ascii, fallback to
-    # single_ascii
-    unless (defined $self->{border_style}) {
-        $self->border_style('single_eascii');
+    # pick a default border style
+    unless ($self->{border_style}) {
+        my $bs;
+        if ($self->use_utf8) {
+            $bs = 'csingle_utf8';
+        } elsif ($self->use_box_chars) {
+            $bs = 'single_boxchar';
+        } else {
+            $bs = 'single_ascii';
+        }
+        $self->border_style($bs);
     }
 
-    unless (defined $self->{color_theme}) {
-        $self->color_theme(defined($ENV{COLOR}) && !$ENV{COLOR} ?
-                           'no_color' : 'default');
+    # pick a default border style
+    unless ($self->{color_theme}) {
+        my $ct;
+        if ($self->use_color) {
+            if ($self->use_color =~ /256/) {
+                $ct = 'default_256';
+            } else {
+                $ct = 'default_16';
+            }
+        } else {
+            $ct = 'no_color';
+        }
+        $self->color_theme($ct);
     }
+}
+
+sub list_border_styles {
+    require Module::List;
+    require Module::Load;
+
+    my ($self, $detail) = @_;
+    state $all_bs;
+
+    if (!$all_bs) {
+        my $mods = Module::List::list_modules("Text::ANSITable::BorderStyle::",
+                                              {list_modules=>1});
+        no strict 'refs';
+        $all_bs = {};
+        for my $mod (sort keys %$mods) {
+            $log->tracef("Loading border style module '%s' ...", $mod);
+            Module::Load::load($mod);
+            my $bs = \%{"$mod\::border_styles"};
+            for (keys %$bs) {
+                $bs->{$_}{name} = $_;
+                $all_bs->{$_} = $bs->{$_};
+            }
+        }
+    }
+
+    if ($detail) {
+        return $all_bs;
+    } else {
+        return sort keys %$all_bs;
+    }
+}
+
+sub list_color_themes {
+    require Module::List;
+    require Module::Load;
+
+    my ($self, $detail) = @_;
+    state $all_ct;
+
+    if (!$all_ct) {
+        my $mods = Module::List::list_modules("Text::ANSITable::ColorTheme::",
+                                              {list_modules=>1});
+        no strict 'refs';
+        $all_ct = {};
+        for my $mod (sort keys %$mods) {
+            $log->tracef("Loading color theme module '%s' ...", $mod);
+            Module::Load::load($mod);
+            my $ct = \%{"$mod\::color_themes"};
+            for (keys %$ct) {
+                $ct->{$_}{name} = $_;
+                $all_ct->{$_} = $ct->{$_};
+            }
+        }
+    }
+
+    if ($detail) {
+        return $all_ct;
+    } else {
+        return sort keys %$all_ct;
+    }
+}
+
+sub border_style {
+    my $self = shift;
+
+    if (!@_) { return $self->{border_style} }
+    my $bs = shift;
+
+    if (!ref($bs)) {
+        my $all_bs = $self->list_border_styles(1);
+        $all_bs->{$bs} or die "Unknown border style name '$bs'";
+        $bs = $all_bs->{$bs};
+    }
+
+    my $err;
+    if ($bs->{box_chars} && !$self->use_box_chars) {
+        $err = "use_box_chars is set to false";
+    } elsif ($bs->{utf8} && !$self->use_utf8) {
+        $err = "use_utf8 is set to false";
+    }
+    die "Can't select border style: $err" if $err;
+
+    $self->{border_style} = $bs;
+}
+
+sub color_theme {
+    my $self = shift;
+
+    if (!@_) { return $self->{color_theme} }
+    my $ct = shift;
+
+    if (!ref($ct)) {
+        my $all_ct = $self->list_color_themes(1);
+        $all_ct->{$ct} or die "Unknown color theme name '$ct'";
+        $ct = $all_ct->{$ct};
+    }
+
+    my $err;
+    if (!$ct->{no_color} && !$self->use_color) {
+        $err = "use_color is set to false";
+    } elsif (!$ct->{no_color} && $ct->{256} &&
+                 (!$self->use_color || $self->use_color !~ /256/)) {
+        $err = "use_color is not set to 256 color";
+    }
+    die "Can't select color theme: $err" if $err;
+
+    $self->{color_theme} = $ct;
 }
 
 sub add_row {
     my ($self, $row) = @_;
     push @{ $self->{rows} }, $row;
-    $self->{rows};
+    $self;
+}
+
+sub add_rows {
+    my ($self, $rows) = @_;
+    $self->add_row($_) for @$rows;
+    $self;
 }
 
 sub cell {
@@ -266,12 +258,11 @@ sub draw {
         $j++;
     }
 
-    my $bs = $border_styles{$self->{border_style}}
-        or die "Unknown border style '$self->{border_style}'";
+    my $bs = $self->{border_style};
     my $ch = $bs->{chars};
 
-    my $bb = $bs->{before_draw_border};
-    my $ab = $bs->{after_draw_border};
+    my $bb = $bs->{box_chars} ? "\e(0" : "";
+    my $ab = $bs->{box_chars} ? "\e(B" : "";
     my $cols = $self->{cols};
 
     my @t;
@@ -324,7 +315,7 @@ sub draw {
         push @t, "\n";
 
         # draw separator between data rows
-        if ($self->{draw_row_separator} && $j < @{$self->{rows}}-1) {
+        if ($self->{display_row_separator} && $j < @{$self->{rows}}-1) {
             push @t, $bb, $ch->[4][0];
             $i = 0;
             for my $c (@$cols) {
@@ -348,6 +339,7 @@ sub draw {
     }
     push @t, $ab;
 
+    #use Data::Dump; dd \@t;
     join "", @t;
 }
 
@@ -360,26 +352,29 @@ sub draw {
 
  use 5.010;
  use Text::ANSITable;
- my $t = Text::ANSITable->new(
-     border_style => 'hdouble_single_utf8',
- );
+
+ # don't forget this if you want to output utf8 characters
+ binmode(STDOUT, ":utf8");
+
+ my $t = Text::ANSITable->new;
+
+ # set styles
+ $t->border_style('bold_utf8');  # if not, it picks a nice default for you
+ $t->color_theme('default_256'); # if not, it picks a nice default for you
+
+ # fill data
  $t->cols(["name", "color", "price"]);
  $t->add_row(["chiki"      , "yellow", 2000]);
  $t->add_row(["lays"       , "green" , 5000]);
  $t->add_row(["tao kae noi", "blue"  , 4500]);
  my $color = $t->cell(2, 1); # => "blue"
  $t->cell(2, 1, "red");
- binmode(STDOUT, ":utf8");
- say $t;
 
-will print something like (but with color and extended ASCII characters where
-supported by terminal):
+ # draw it!
+ say $t->draw;
 
 
 =head1 DESCRIPTION
-
-B<NOTE: THIS IS A VERY VERY VERY EARLY VERSION WHERE MOST THINGS ARE NOT EVEN
-IMPLEMENTED (BUT THE ABOVE SYNOPSIS WORKS THOUGH)>.
 
 This module is yet another text table formatter module like L<Text::ASCIITable>
 or L<Text::SimpleTable>, with the following differences:
@@ -391,14 +386,14 @@ or L<Text::SimpleTable>, with the following differences:
 ANSI color codes will be used by default, but will degrade to black and white if
 terminal does not support them.
 
-=item * Extended ASCII characters
+=item * Box-drawing characters
 
-Extended ASCII (box-drawing) characters will be used by default, but will
-degrade to using normal ASCII characters if terminal does not support them.
+Box-drawing characters will be used by default, but will degrade to using normal
+ASCII characters if terminal does not support them.
 
-=item * Unicode
+=item * Unicode support
 
-Use UTF-8 by default and handle wide characters so they are kept aligned.
+Columns containing wide characters stay aligned.
 
 =back
 
@@ -419,18 +414,49 @@ Table contents.
 
 Column names.
 
-=head2 border_style => STR
+=head2 use_color => BOOL
 
-Name of border style to use when drawing the table. Default is C<single_eascii>,
-or C<single_ascii>. For available border styles, see
-C<%Text::ANSITable::border_styles>.
+Whether to output color. Default is taken from C<COLOR> environment variable, or
+detected via C<(-t STDOUT)>. If C<use_color> is set to 0, an attempt to use a
+colored color theme (i.e. anything that is not C<no_color>) will result in an
+exception.
 
-=head2 color_theme => STR
+(In the future, setting C<use_color> to 0 might opt the module to use
+normal/plain string routines instead of the slower ta_* functions from
+L<Text::ANSI::Util>).
 
-Name of color theme to use when drawing the table. Default is C<default>, or
-C<no_color>. For available color themes, see C<%Text::ANSITable::color_themes>.
+=head2 use_box_chars => BOOL
 
-=head2 draw_row_separator => BOOL (default 0)
+Whether to use box characters. Default is taken from C<BOX_CHARS> environment
+variable, or 1. If C<use_box_chars> is set to 0, an attempt to use a border
+style that uses box chararacters will result in an exception.
+
+=head2 use_utf8 => BOOL
+
+Whether to use box characters. Default is taken from C<UTF8> environment
+variable, or detected via L<LANG> environment variable, or 1. If C<use_utf8> is
+set to 0, an attempt to select a border style that uses Unicode characters will
+result in an exception.
+
+(In the future, setting C<use_utf8> to 0 might opt the module to use the
+non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. ta_wrap() instead
+of ta_mbwrap(), and so on).
+
+=head2 border_style => HASH
+
+Border style specification to use.
+
+You can set this attribute's value with a specification or border style name.
+See L<"/BORDER STYLES"> for more details.
+
+=head2 color_theme => HASH
+
+Color theme specification to use.
+
+You can set this attribute's value with a specification or color theme name. See
+L<"/COLOR THEMES"> for more details.
+
+=head2 display_row_separator => BOOL (default 0)
 
 Whether to draw separator between rows.
 
@@ -441,32 +467,63 @@ Whether to draw separator between rows.
 
 Constructor.
 
+=head2 $t->list_border_styles => LIST
+
+Return the names of available border styles. Border styles will be searched in
+C<Text::ANSITable::BorderStyle::*> modules.
+
 =head2 $t->add_row(\@row) => OBJ
+
+Add a row.
+
+=head2 $t->add_rows(\@rows) => OBJ
+
+Add multiple rows.
 
 =head2 $t->cell($row_num, $col[, $val]) => OBJ
 
-Get or set cell value at row #C<$row_num> and column #C<$col> (if C<$col> is a
-number) or column named C<$col> (if C<$col> does not look like a number).
+Get or set cell value at row #C<$row_num> (starts from zero) and column #C<$col>
+(if C<$col> is a number, starts from zero) or column named C<$col> (if C<$col>
+does not look like a number).
 
 =head2 $t->draw => STR
 
-Draw the table and return the result. Or you can just stringify the string:
-
- "$t"
-
-
-=head1 FAQ
-
-=head2 I'm getting 'Wide character in print' error message when I use utf8 border styles!
-
-Add something like this first before printing to your output:
-
- binmode(STDOUT, ":utf8");
+Draw the table and return the result.
 
 
 =head1 BORDER STYLES
 
-For border styles, here are the characters to supply:
+To list available border styles:
+
+ say $_ for $t->list_border_styles;
+
+Border styles are searched in C<Text::ANSITable::BorderStyle::*> modules
+(asciibetically), in the C<%border_styles> variable. Hash keys are border style
+names, hash values are border style specifications.
+
+To choose border style, either set the C<border_style> attribute to an available
+border style or a border specification directly.
+
+ $t->border_style("singleh_boxchar");
+ $t->border_style("foo");   # dies, no such border style
+ $t->border_style({ ... }); # set specification directly
+
+If no border style is selected explicitly, a nice default will be chosen. You
+can also the C<ANSITABLE_BORDER_STYLE> environment variable to set the default.
+
+To create a new border style, create a module under
+C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
+modules for example, like L<Text::ANSITable::BorderStyle::Default>. Format for
+the C<chars> specification key:
+
+ [
+   [A, b, C, D],
+   [E, F, G],
+   [H, i, J, K],
+   [L, M, N],
+   [O, p, Q, R],
+   [S, t, U, V],
+ ]
 
  AbbbCbbbD        Top border characters
  E   F   G        Vertical separators for header row
@@ -478,16 +535,67 @@ For border styles, here are the characters to supply:
 
 Each character must have visual width of 1.
 
-See existing border styles in the source code for examples. Format for C<chars>:
 
- [
-   [A, b, C, D],
-   [E, F, G],
-   [H, i, J, K],
-   [L, M, N],
-   [O, p, Q, R],
-   [S, t, U, V],
- ]
+=head1 COLOR THEMES
+
+To list available color themes:
+
+ say $_ for $t->list_color_themes;
+
+Color themes are searched in C<Text::ANSITable::ColorTheme::*> modules
+(asciibetically), in the C<%color_themes> variable. Hash keys are color theme
+names, hash values are color theme specifications.
+
+To choose a color theme, either set the C<color_theme> attribute to an available
+color theme or a border specification directly.
+
+ $t->color_theme("default_256");
+ $t->color_theme("foo");    # dies, no such color theme
+ $t->color_theme({ ... });  # set specification directly
+
+If no color theme is selected explicitly, a nice default will be chosen. You can
+also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
+
+To create a new color theme, create a module under
+C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
+modules for example, like L<Text::ANSITable::ColorTheme::Default>.
+
+
+=head1 ENVIRONMENT
+
+=head2 COLOR => BOOL
+
+Can be used to set default value for the C<color> attribute.
+
+=head2 BOX_CHARS => BOOL
+
+Can be used to set default value for the C<box_chars> attribute.
+
+=head2 UTF8 => BOOL
+
+Can be used to set default value for the C<utf8> attribute.
+
+=head2 ANSITABLE_BORDER_STYLE => STR
+
+Can be used to set default value for C<border_style> attribute.
+
+=head2 ANSITABLE_COLOR_THEME => STR
+
+Can be used to set default value for C<border_style> attribute.
+
+
+=head1 FAQ
+
+=head2 I'm getting 'Wide character in print' error message when I use utf8 border styles!
+
+Add something like this first before printing to your output:
+
+ binmode(STDOUT, ":utf8");
+
+=head2 My table looks garbled when viewed through pager like B<less>!
+
+Try using C<-R> option of B<less> to see ANSI color codes. Try not using boxchar
+border styles, use the utf8 or ascii version.
 
 
 =head1 SEE ALSO
