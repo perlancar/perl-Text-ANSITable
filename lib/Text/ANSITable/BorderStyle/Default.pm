@@ -7,6 +7,34 @@ use warnings;
 
 our %border_styles = (
 
+    # none
+
+    none => {
+        summary => 'No border',
+        chars => [
+            ['','','',''],
+            [' ',' ',' '],
+            ['','','',''],
+            [' ',' ',' '],
+            ['','','',''],
+            ['','','',''],
+        ],
+    },
+
+    # space
+    space => {
+        summary => 'Space as border',
+        chars => [
+            [' ',' ',' ',' '],
+            [' ',' ',' '],
+            [' ',' ',' ',' '],
+            [' ',' ',' '],
+            [' ',' ',' ',' '],
+            [' ',' ',' ',' '],
+        ],
+    },
+
+
     # single
 
     single_ascii => {

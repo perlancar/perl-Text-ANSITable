@@ -535,7 +535,11 @@ the C<chars> specification key:
  L   M   N
  StttUtttV        Bottom border characters
 
-Each character must have visual width of 1.
+Each character must have visual width of 1. If A is an empty string, the top
+border line will not be drawn. If H is an empty string, the header-data
+separator line will not be drawn. If O is an empty string, data separator lines
+will not be drawn. If S is an empty string, bottom border line will not be
+drawn.
 
 
 =head1 COLOR THEMES
