@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use Text::ANSITable;
+use Text::ASCIITable;
+
+#binmode(STDOUT, ":utf8");
+
+my $t = Text::ANSITable->new;
+my $all_ct = $t->list_color_themes(1);
+
+$t = Text::ASCIITable->new;
+$t->setCols('name', 'summary', '256');
+for my $name (sort keys %$all_ct) {
+    my $ct = $all_ct->{$name};
+    $t->addRow($name, $ct->{summary}, $ct->{256} ? 1:0);
+}
+
+print $t;
+
+#ABSTRACT: Display a list of color styles using Text::ASCIITable (temp script?)
+#PODNAME: ansitable-list-color-themes-using-asciitable
