@@ -135,37 +135,37 @@ our %border_styles = (
     singlei_ascii => {
         summary => 'Single, inner only (like in psql command-line client)',
         chars => [
-            [' ',' ','|',' '],
+            ['','','',''],
             [' ','|',' '],
             [' ','-','+',' '],
             [' ','|',' '],
             [' ','-','+',' '],
-            [' ','-','|',' '],
+            ['','','',''],
         ],
     },
 
-    single_boxchar => {
+    singlei_boxchar => {
         summary => 'Single, inner only (like in psql command-line client)',
         chars => [
-            ['l','q','w','k'],
-            ['x','x','x'],
-            ['t','q','n','u'],
-            ['x','x','x'],
-            ['t','q','n','u'],
-            ['m','q','v','j'],
+            ['','','',''],
+            [' ','x',' '],
+            [' ','q','n',' '],
+            [' ','x',' '],
+            [' ','q','n',' '],
+            ['','','',''],
         ],
         box_chars => 1,
     },
 
-    single_utf8 => {
+    singlei_utf8 => {
         summary => 'Single, inner only (like in psql command-line client)',
         chars => [
-            [" "," "," ","┐"],
-            ["│","│","│"],
-            ["├","─","┼","┤"],
-            ["│","│","│"],
-            ["├","─","┼","┤"],
-            ["└","─","┴","┘"],
+            ["","","",""],
+            [" ","│"," "],
+            [" ","─","┼"," "],
+            [" ","│"," "],
+            [" ","─","┼"," "],
+            ["","","",""],
         ],
         utf8 => 1,
     },
@@ -216,6 +216,7 @@ our %border_styles = (
     # double
 
     double_utf8 => {
+        summary => 'Double',
         chars => [
             ["╔","═","╦","╗"],
             ["║","║","║"],
