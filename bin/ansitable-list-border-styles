@@ -6,6 +6,8 @@ use warnings;
 
 use Text::ANSITable;
 
+# VERSION
+
 binmode(STDOUT, ":utf8");
 
 my $t = Text::ANSITable->new;

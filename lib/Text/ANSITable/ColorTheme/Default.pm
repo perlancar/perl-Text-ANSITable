@@ -6,6 +6,8 @@ use warnings;
 
 use Term::ANSIColor;
 
+# VERSION
+
 our %color_themes = (
 
     no_color => {

@@ -5,6 +5,8 @@ use strict;
 use utf8;
 use warnings;
 
+# VERSION
+
 our %border_styles = (
 
     # none
