@@ -18,7 +18,7 @@ if ($ARGV[0]) {
 
 my $all_bs = $t->list_border_styles(1);
 
-$t->columns(['name', 'summary', 'box_chars', 'utf8']);
+$t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
 for my $name (sort keys %$all_bs) {
     my $bs = $all_bs->{$name};
     $t->add_row(
