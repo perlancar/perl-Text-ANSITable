@@ -509,15 +509,17 @@ terminal does not support them.
 Box-drawing characters will be used by default, but will degrade to using normal
 ASCII characters if terminal does not support them.
 
-=item * Unicode support
+=item * Unicode and wide character support
 
-Columns containing wide characters stay aligned.
+Border styles using Unicode characters (double lines, bold/heavy lines, brick
+style, etc). Columns containing wide characters stay aligned.
 
 =back
 
 Compared to Text::ASCIITable, it uses C<lower_case> method/attr names instead of
 C<CamelCase>, and it uses arrayref for C<columns> and C<add_row>. When
-specifying border styles, the order of characters are slightly different.
+specifying border styles, the order of characters are slightly different. More
+fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
@@ -528,7 +530,8 @@ To list available border styles:
 
  say $_ for $t->list_border_styles;
 
-Or you can also run the provided B<ansitable-list-border-styles> script.
+Or you can also try out borders using the provided
+B<ansitable-list-border-styles> script.
 
 Border styles are searched in C<Text::ANSITable::BorderStyle::*> modules
 (asciibetically), in the C<%border_styles> variable. Hash keys are border style
