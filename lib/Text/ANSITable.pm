@@ -8,7 +8,6 @@ use Moo;
 
 #use List::Util 'first';
 use Scalar::Util 'looks_like_number';
-use Term::ANSIColor;
 use Text::ANSI::Util 'ta_mbswidth_height';
 
 # VERSION
@@ -51,9 +50,51 @@ has rows => (
     is      => 'rw',
     default => sub { [] },
 );
-has display_row_separator => (
+has _row_separators => ( # [index after which sep should be drawn, ...] sorted
+    is      => 'rw',
+    default => sub { [] },
+);
+has show_row_separator => (
     is      => 'rw',
     default => sub { 0 },
+);
+has _column_styles => ( # store per-column styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _row_styles => ( # store per-row styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _cell_styles => ( # store per-cell styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has column_pad => (
+    is      => 'rw',
+    default => sub { 1 },
+);
+has column_lpad => (
+    is      => 'rw',
+);
+has column_rlpad => (
+    is      => 'rw',
+);
+has row_vpad => (
+    is      => 'rw',
+    default => sub { 0 },
+);
+has row_tpad => (
+    is      => 'rw',
+);
+has row_bpad => (
+    is      => 'rw',
+);
+has cell_fgcolor => (
+    is => 'rw',
+);
+has cell_bgcolor => (
+    is => 'rw',
 );
 
 sub BUILD {
@@ -187,7 +228,7 @@ sub color_theme {
     if (!$ct->{no_color} && !$self->use_color) {
         $err = "use_color is set to false";
     } elsif (!$ct->{no_color} && $ct->{256} &&
-                 (!$self->use_color || $self->use_color !~ /256/)) {
+                 (!$self->use_color || $self->use_color < 256)) {
         $err = "use_color is not set to 256 color";
     }
     die "Can't select color theme: $err" if $err;
@@ -199,6 +240,16 @@ sub add_row {
     my ($self, $row) = @_;
     die "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
+    $self;
+}
+
+sub add_row_separator {
+    my ($self) = @_;
+    my $idx = ~~@{$self->{rows}}-1;
+    # ignore duplicate separators
+    push @{ $self->{_row_separators} }, $idx
+        unless @{ $self->{_row_separators} } &&
+            $self->{_row_separators}[-1] == $idx;
     $self;
 }
 
@@ -230,10 +281,57 @@ sub cell {
 
     if (@_) {
         my $oldval = $self->{rows}[$row_num][$col];
-        $self->{rows}[$row_num][$col]= shift;
+        $self->{rows}[$row_num][$col] = shift;
         return $oldval;
     } else {
         return $self->{rows}[$row_num][$col];
+    }
+}
+
+sub column_style {
+    my $self  = shift;
+    my $col   = shift;
+    my $style = shift;
+
+    $col = $self->_colidx($col);
+
+    if (@_) {
+        my $oldval = $self->{_column_styles}[$col]{$style};
+        $self->{_column_styles}[$col]{$style} = shift;
+        return $oldval;
+    } else {
+        return $self->{_column_styles}[$col]{$style};
+    }
+}
+
+sub row_style {
+    my $self  = shift;
+    my $row   = shift;
+    my $style = shift;
+
+    if (@_) {
+        my $oldval = $self->{_row_styles}[$row]{$style};
+        $self->{_row_styles}[$row]{$style} = shift;
+        return $oldval;
+    } else {
+        return $self->{_row_styles}[$row]{$style};
+    }
+}
+
+sub cell_style {
+    my $self  = shift;
+    my $row   = shift;
+    my $col   = shift;
+    my $style = shift;
+
+    $col = $self->_colidx($col);
+
+    if (@_) {
+        my $oldval = $self->{_cell_styles}[$row][$col]{$style};
+        $self->{_cell_styles}[$row][$col]{$style} = shift;
+        return $oldval;
+    } else {
+        return $self->{_cell_styles}[$row][$col]{$style};
     }
 }
 
@@ -335,7 +433,7 @@ sub draw {
         push @t, "\n";
 
         # draw separator between data rows
-        if ($self->{display_row_separator} && $j < @{$self->{rows}}-1) {
+        if ($self->{show_row_separator} && $j < @{$self->{rows}}-1) {
             push @t, $bb, $ch->[4][0];
             $i = 0;
             for my $c (@$cols) {
@@ -424,95 +522,6 @@ specifying border styles, the order of characters are slightly different.
 It uses L<Moo> object system.
 
 
-=head1 ATTRIBUTES
-
-=head2 rows => ARRAY OF ARRAY OF STR
-
-Table contents.
-
-=head2 columns => ARRAY OF STR
-
-Column names.
-
-=head2 use_color => BOOL
-
-Whether to output color. Default is taken from C<COLOR> environment variable, or
-detected via C<(-t STDOUT)>. If C<use_color> is set to 0, an attempt to use a
-colored color theme (i.e. anything that is not C<no_color>) will result in an
-exception.
-
-(In the future, setting C<use_color> to 0 might opt the module to use
-normal/plain string routines instead of the slower ta_* functions from
-L<Text::ANSI::Util>).
-
-=head2 use_box_chars => BOOL
-
-Whether to use box characters. Default is taken from C<BOX_CHARS> environment
-variable, or 1. If C<use_box_chars> is set to 0, an attempt to use a border
-style that uses box chararacters will result in an exception.
-
-=head2 use_utf8 => BOOL
-
-Whether to use box characters. Default is taken from C<UTF8> environment
-variable, or detected via L<LANG> environment variable, or 1. If C<use_utf8> is
-set to 0, an attempt to select a border style that uses Unicode characters will
-result in an exception.
-
-(In the future, setting C<use_utf8> to 0 might opt the module to use the
-non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. ta_wrap() instead
-of ta_mbwrap(), and so on).
-
-=head2 border_style => HASH
-
-Border style specification to use.
-
-You can set this attribute's value with a specification or border style name.
-See L<"/BORDER STYLES"> for more details.
-
-=head2 color_theme => HASH
-
-Color theme specification to use.
-
-You can set this attribute's value with a specification or color theme name. See
-L<"/COLOR THEMES"> for more details.
-
-=head2 display_row_separator => BOOL (default 0)
-
-Whether to draw separator between rows.
-
-
-=head1 METHODS
-
-=head2 $t = Text::ANSITable->new(%attrs) => OBJ
-
-Constructor.
-
-=head2 $t->list_border_styles => LIST
-
-Return the names of available border styles. Border styles will be searched in
-C<Text::ANSITable::BorderStyle::*> modules.
-
-=head2 $t->add_row(\@row) => OBJ
-
-Add a row. Note that row data is not copied, only referenced.
-
-=head2 $t->add_rows(\@rows) => OBJ
-
-Add multiple rows. Note that row data is not copied, only referenced.
-
-=head2 $t->cell($row_num, $col[, $newval]) => VAL
-
-Get or set cell value at row #C<$row_num> (starts from zero) and column #C<$col>
-(if C<$col> is a number, starts from zero) or column named C<$col> (if C<$col>
-does not look like a number).
-
-When setting value, old value is returned.
-
-=head2 $t->draw => STR
-
-Draw the table and return the result.
-
-
 =head1 BORDER STYLES
 
 To list available border styles:
@@ -591,6 +600,333 @@ C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>.
 
 
+=head1 COLUMN WIDTHS
+
+By default column width is set just so it is enough to show the widest data.
+Also by default terminal width is respected, so columns are shrunk
+proportionally to fit terminal width.
+
+You can set certain column's width using the C<column_style()> method, e.g.:
+
+ $t->column_style('colname', width => 20);
+
+You can also use negative number here to mean I<minimum> width.
+
+
+=head1 CELL (HORIZONTAL) PADDING
+
+By default cell (horizontal) padding is 1. This can be customized in the
+following ways (in order of precedence, from lowest):
+
+=over
+
+=item * Setting C<column_pad> attribute
+
+This sets left and right padding for all columns.
+
+=item * Setting C<column_lpad> and C<column_rpad> attributes
+
+They set left and right padding, respectively.
+
+=item * Setting per-column padding using C<column_style()> method
+
+Example:
+
+ $t->column_style('colname', pad => 2);
+
+=item * Setting per-column left/right padding using C<column_style()> method
+
+ $t->column_style('colname', lpad => 0);
+ $t->column_style('colname', lpad => 1);
+
+=back
+
+
+=head1 COLUMN VERTICAL PADDING
+
+Default vertical padding is 0. This can be changed in the following ways (in
+order of precedence, from lowest):
+
+=over
+
+=item * Setting C<row_vpad> attribute
+
+This sets top and bottom padding.
+
+=item * Setting C<row_tpad>/<row_bpad> attribute
+
+They set top/bottom padding separately.
+
+=item * Setting per-row vertical padding using C<row_style()>/C<add_row(s)> method
+
+Example:
+
+ $t->row_style($rownum, vpad => 1);
+
+When adding row:
+
+ $t->add_row($rownum, {vpad=>1});
+
+=item * Setting per-row vertical padding using C<row_style()>/C<add_row(s)> method
+
+Example:
+
+ $t->row_style($rownum, tpad => 1);
+ $t->row_style($rownum, bpad => 2);
+
+When adding row:
+
+ $t->add_row($row, {tpad=>1, bpad=>2});
+
+=back
+
+
+=head1 CELL COLORS
+
+By default data format colors are used, e.g. cyan/green for text (using the
+default color scheme). In absense of that, default_fgcolor and default_bgcolor
+from the color scheme are used. You can customize colors in the following ways
+(ordered by precedence, from lowest):
+
+=item C<cell_fgcolor> and C<cell_bgcolor> attributes
+
+Sets all cells' colors. Color should be specified using 6-hexdigit RGB which
+will be converted to the appropriate terminal color.
+
+Can also be set to a coderef which will receive ($rownum, $colname) and should
+return an RGB color.
+
+=item Per-column color using C<column_style()> method
+
+Example:
+
+ $t->column_style('colname', fgcolor => 'fa8888');
+ $t->column_style('colname', bgcolor => '202020');
+
+=item Per-row color using C<row_style()> method
+
+Example:
+
+ $t->row_style($rownum, fgcolor => 'fa8888');
+ $t->row_style($rownum, bgcolor => '202020');
+
+When adding row/rows:
+
+ $t->add_row($row, {fgcolor=>..., bgcolor=>...});
+ $t->add_rows($rows, {bgcolor=>...});
+
+=item Per-cell color using C<cell_style()> method
+
+Example:
+
+ $t->cell_style($rownum, $colname, fgcolor => 'fa8888');
+ $t->cell_style($rownum, $colname, bgcolor => '202020');
+
+
+=head1 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
+
+By default colors are added according to data formats, e.g. right align for
+numbers, left for strings, and middle for bools. To customize it, use the
+following ways (ordered by precedence, from lowest):
+
+=over
+
+=item * Setting per-column alignment using C<column_style()> method
+
+Example:
+
+ $t->column_style($colname, align  => 'middle'); # or left, or right
+ $t->column_style($colname, valign => 'top');    # or bottom, or middle
+
+=item * Setting per-cell alignment using C<cell_style()> method
+
+ $t->cell_style($rownum, $colname, align  => 'middle');
+ $t->cell_style($rownum, $colname, valign => 'top');
+
+=back
+
+
+=head1 COLUMN WRAPPING
+
+By default column wrapping is turned on. You can set it on/off via the
+C<column_wrap> attribute or per-column C<wrap> style.
+
+Note that cell content past the column width will be clipped/truncated.
+
+
+=head1 CELL FORMATS
+
+The formats settings regulates how the data is formatted. The value for this
+setting will be passed to L<Data::Unixish::Apply>'s apply(), as the C<functions>
+argument. So it should be a single string (like C<date>) or an array (like C<<
+['date', ['centerpad', {width=>20}]] >>).
+
+See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
+functions are available. Functions of interest to formatting data include: bool,
+num, sprintf, sprintfn, wrap, (among others).
+
+
+=head1 ATTRIBUTES
+
+=head2 rows => ARRAY OF ARRAY OF STR
+
+Store row data.
+
+=head2 columns => ARRAY OF STR
+
+Store column names.
+
+=head2 use_color => BOOL
+
+Whether to output color. Default is taken from C<COLOR> environment variable, or
+detected via C<(-t STDOUT)>. If C<use_color> is set to 0, an attempt to use a
+colored color theme (i.e. anything that is not C<no_color>) will result in an
+exception.
+
+(In the future, setting C<use_color> to 0 might opt the module to use
+normal/plain string routines instead of the slower ta_* functions from
+L<Text::ANSI::Util>).
+
+=head2 use_box_chars => BOOL
+
+Whether to use box characters. Default is taken from C<BOX_CHARS> environment
+variable, or 1. If C<use_box_chars> is set to 0, an attempt to use a border
+style that uses box chararacters will result in an exception.
+
+=head2 use_utf8 => BOOL
+
+Whether to use box characters. Default is taken from C<UTF8> environment
+variable, or detected via L<LANG> environment variable, or 1. If C<use_utf8> is
+set to 0, an attempt to select a border style that uses Unicode characters will
+result in an exception.
+
+(In the future, setting C<use_utf8> to 0 might opt the module to use the
+non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. ta_wrap() instead
+of ta_mbwrap(), and so on).
+
+=head2 border_style => HASH
+
+Border style specification to use.
+
+You can set this attribute's value with a specification or border style name.
+See L<"/BORDER STYLES"> for more details.
+
+=head2 color_theme => HASH
+
+Color theme specification to use.
+
+You can set this attribute's value with a specification or color theme name. See
+L<"/COLOR THEMES"> for more details.
+
+=head2 show_header => BOOL (default: 1)
+
+When drawing, whether to show header.
+
+=head2 show_row_separator => BOOL (default: 0)
+
+When drawing, whether to show separator between rows.
+
+=head2 column_pad => INT
+
+Set (horizontal) padding for all columns. Can be overriden by per-column C<pad>
+style.
+
+=head2 column_lpad => INT
+
+Set left padding for all columns. Overrides the C<column_pad> attribute. Can be
+overriden by per-column <lpad> style.
+
+=head2 column_rpad => INT
+
+Set right padding for all columns. Overrides the C<column_pad> attribute. Can be
+overriden by per-column <rpad> style.
+
+=head2 row_vpad => INT
+
+Set vertical padding for all rows. Can be overriden by per-row C<vpad> style.
+
+=head2 row_tpad => INT
+
+Set top padding for all rows. Overrides the C<row_vpad> attribute. Can be
+overriden by per-row <tpad> style.
+
+=head2 row_bpad => INT
+
+Set bottom padding for all rows. Overrides the C<row_vpad> attribute. Can be
+overriden by per-row <bpad> style.
+
+=head2 cell_fgcolor => RGB|CODE
+
+Set foreground color for all cells. Value should be 6-hexdigit RGB. Can also be
+a coderef that will receive ($row_num, $colname) and should return an RGB color.
+Can be overriden by per-cell C<fgcolor> style.
+
+=head2 cell_bgcolor => RGB|CODE
+
+Like C<cell_fgcolor> but for background color.
+
+
+=head1 METHODS
+
+=head2 $t = Text::ANSITable->new(%attrs) => OBJ
+
+Constructor.
+
+=head2 $t->list_border_styles => LIST
+
+Return the names of available border styles. Border styles will be searched in
+C<Text::ANSITable::BorderStyle::*> modules.
+
+=head2 $t->add_row(\@row[, \%styles]) => OBJ
+
+Add a row. Note that row data is not copied, only referenced.
+
+Can also add per-row styles (which can also be done using C<row_style()>).
+
+=head2 $t->add_rows(\@rows[, \%styles]) => OBJ
+
+Add multiple rows. Note that row data is not copied, only referenced.
+
+Can also add per-row styles (which can also be done using C<row_style()>).
+
+=head2 $t->add_row_separator() => OBJ
+
+Add a row separator line.
+
+=head2 $t->cell($row_num, $col[, $newval]) => VAL
+
+Get or set cell value at row #C<$row_num> (starts from zero) and column #C<$col>
+(if C<$col> is a number, starts from zero) or column named C<$col> (if C<$col>
+does not look like a number).
+
+When setting value, old value is returned.
+
+=head2 $t->column_style($col, $style[, $newval]) => VAL
+
+Get or set per-column style for column named/numbered C<$col>. Available values
+for C<$style>: pad, lpad, width, formats, fgcolor, bgcolor.
+
+When setting value, old value is returned.
+
+=head2 $t->row_style($row_num[, $newval]) => VAL
+
+Get or set per-row style. Available values for C<$style>: vpad, tpad, bpad,
+fgcolor, bgcolor.
+
+When setting value, old value is returned.
+
+=head2 $t->cell_style($row_num, $col[, $newval]) => VAL
+
+Get or set per-cell style. Available values for C<$style>: formats, fgcolor,
+bgcolor.
+
+When setting value, old value is returned.
+
+=head2 $t->draw => STR
+
+Render table.
+
+
 =head1 ENVIRONMENT
 
 =head2 COLOR => BOOL
@@ -627,17 +963,26 @@ Add something like this first before printing to your output:
 Try using C<-R> option of B<less> to see ANSI color codes. Try not using boxchar
 border styles, use the utf8 or ascii version.
 
+=head2 How to hide borders?
+
+Choose border styles like C<space> or C<none>.
+
+=head2 How do I format data?
+
+Use the C<formats> per-column style or per-cell style. For example:
+
+ $t->column_style('available', formats => [[bool=>{style=>'check_cross'}],
+                                           [centerpad=>{width=>10}]]);
+ $t->column_style('amount'   , formats => [[num=>{decimal_digits=>2}]]);
+ $t->column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
+
 
 =head1 SEE ALSO
 
-L<Text::Table>
+Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
+L<Text::ASCIITable> (which I usually used), L<Text::UnicodeTable::Simple>,
+L<Table::Simple> (uses Moose).
 
-L<Text::SimpleTable>
-
-L<Text::ASCIITable>, which I usually used.
-
-L<Text::UnicodeTable::Simple>
-
-L<Table::Simple> (uses Moose)
+Modules used: L<Text::ANSI::Util>, L<Color::ANSI::Util>.
 
 =cut
