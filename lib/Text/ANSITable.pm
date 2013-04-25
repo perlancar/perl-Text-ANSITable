@@ -968,7 +968,9 @@ border styles, use the utf8 or ascii version.
 
 =head2 How to hide borders?
 
-Choose border styles like C<space> or C<none>.
+Choose border styles like C<space> or C<none>:
+
+ $t->border_style("none");
 
 =head2 How do I format data?
 
@@ -978,6 +980,9 @@ Use the C<formats> per-column style or per-cell style. For example:
                                            [centerpad=>{width=>10}]]);
  $t->column_style('amount'   , formats => [[num=>{decimal_digits=>2}]]);
  $t->column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
+
+See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
+available formatting functions.
 
 
 =head1 TODO
