@@ -980,6 +980,11 @@ Use the C<formats> per-column style or per-cell style. For example:
  $t->column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
 
 
+=head1 TODO
+
+Attributes: header_{pad,vpad,lpad,rpad,tpad,bpad,align,valign,wrap}
+
+
 =head1 SEE ALSO
 
 Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
