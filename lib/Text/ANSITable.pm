@@ -691,7 +691,9 @@ default color scheme). In absense of that, default_fgcolor and default_bgcolor
 from the color scheme are used. You can customize colors in the following ways
 (ordered by precedence, from lowest):
 
-=item C<cell_fgcolor> and C<cell_bgcolor> attributes
+=over
+
+=item * C<cell_fgcolor> and C<cell_bgcolor> attributes
 
 Sets all cells' colors. Color should be specified using 6-hexdigit RGB which
 will be converted to the appropriate terminal color.
@@ -699,7 +701,7 @@ will be converted to the appropriate terminal color.
 Can also be set to a coderef which will receive ($rownum, $colname) and should
 return an RGB color.
 
-=item Per-column color using C<column_style()> method
+=item * Per-column color using C<column_style()> method
 
 Example:
 
@@ -724,6 +726,8 @@ Example:
 
  $t->cell_style($rownum, $colname, fgcolor => 'fa8888');
  $t->cell_style($rownum, $colname, bgcolor => '202020');
+
+=back
 
 
 =head1 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
