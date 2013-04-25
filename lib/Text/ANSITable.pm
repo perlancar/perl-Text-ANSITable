@@ -76,7 +76,7 @@ sub BUILD {
     unless ($self->{color_theme}) {
         my $ct;
         if ($self->use_color) {
-            if ($self->use_color =~ /256/) {
+            if ($self->use_color >= 256) {
                 $ct = 'default_256';
             } else {
                 $ct = 'default_16';
