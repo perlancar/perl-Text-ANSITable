@@ -6,7 +6,7 @@ use warnings;
 use Log::Any '$log';
 use Moo;
 
-use List::Util 'first';
+#use List::Util 'first';
 use Scalar::Util 'looks_like_number';
 use Term::ANSIColor;
 use Text::ANSI::Util 'ta_mbswidth_height';
@@ -21,7 +21,7 @@ has use_color => (
             # detect konsole, assume recent enough to support 24bit
             return 2**24 if $ENV{KONSOLE_DBUS_SERVICE}
                 || $ENV{KONSOLE_DBUS_SESSION};
-            if (($ENV{TERM} // "") =~ /256color/?) {
+            if (($ENV{TERM} // "") =~ /256color/) {
                 return 256;
             }
             return 16;
@@ -197,14 +197,28 @@ sub color_theme {
 
 sub add_row {
     my ($self, $row) = @_;
+    die "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
     $self;
 }
 
 sub add_rows {
     my ($self, $rows) = @_;
+    die "Rows must be arrayref" unless ref($rows) eq 'ARRAY';
     $self->add_row($_) for @$rows;
     $self;
+}
+
+sub _colidx {
+    my $self = shift;
+    my $colname = shift;
+
+    return $colname if looks_like_number($colname);
+    my $cols = $self->{columns};
+    for my $i (0..@$cols-1) {
+        return $i if $cols->[$i] eq $colname;
+    }
+    die "Unknown column name '$colname'";
 }
 
 sub cell {
@@ -212,15 +226,12 @@ sub cell {
     my $row_num = shift;
     my $col     = shift;
 
-    unless (looks_like_number($col)) {
-        my $n = first { $_ eq $col } @{ $self->{columns} };
-        die "Unknown column name '$col'" unless defined $n;
-        $col = $n;
-    }
+    $col = $self->_colidx($col);
 
     if (@_) {
-        $self->{rows}[$row_num][$col] = shift;
-        return $self;
+        my $oldval = $self->{rows}[$row_num][$col];
+        $self->{rows}[$row_num][$col]= shift;
+        return $oldval;
     } else {
         return $self->{rows}[$row_num][$col];
     }
@@ -483,17 +494,19 @@ C<Text::ANSITable::BorderStyle::*> modules.
 
 =head2 $t->add_row(\@row) => OBJ
 
-Add a row.
+Add a row. Note that row data is not copied, only referenced.
 
 =head2 $t->add_rows(\@rows) => OBJ
 
-Add multiple rows.
+Add multiple rows. Note that row data is not copied, only referenced.
 
-=head2 $t->cell($row_num, $col[, $val]) => OBJ
+=head2 $t->cell($row_num, $col[, $newval]) => VAL
 
 Get or set cell value at row #C<$row_num> (starts from zero) and column #C<$col>
 (if C<$col> is a number, starts from zero) or column named C<$col> (if C<$col>
 does not look like a number).
+
+When setting value, old value is returned.
 
 =head2 $t->draw => STR
 
