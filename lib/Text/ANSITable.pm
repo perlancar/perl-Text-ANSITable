@@ -16,9 +16,18 @@ use Text::ANSI::Util 'ta_mbswidth_height';
 has use_color => (
     is      => 'rw',
     default => sub {
-        $ENV{COLOR} //
-            ((-t STDOUT) ?
-                 (($ENV{TERM} // "") =~ /256color/? '256' : '16') : 0);
+        return $ENV{COLOR} if defined $ENV{COLOR};
+        if (-t STDOUT) {
+            # detect konsole, assume recent enough to support 24bit
+            return 2**24 if $ENV{KONSOLE_DBUS_SERVICE}
+                || $ENV{KONSOLE_DBUS_SESSION};
+            if (($ENV{TERM} // "") =~ /256color/?) {
+                return 256;
+            }
+            return 16;
+        } else {
+            return 0;
+        }
     },
 );
 has use_box_chars => (
