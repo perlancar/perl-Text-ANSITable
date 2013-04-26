@@ -102,6 +102,12 @@ has cell_fgcolor => (
 has cell_bgcolor => (
     is => 'rw',
 );
+has column_align => (
+    is => 'rw',
+);
+has row_valign => (
+    is => 'rw',
+);
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -243,9 +249,15 @@ sub color_theme {
 }
 
 sub add_row {
-    my ($self, $row) = @_;
+    my ($self, $row, $styles) = @_;
     die "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
+    if ($styles) {
+        my $i = @{ $self->{rows} }-1;
+        for my $s (keys %$styles) {
+            $self->row_style($i, $s, $styles->{$s});
+        }
+    }
     $self;
 }
 
@@ -260,9 +272,9 @@ sub add_row_separator {
 }
 
 sub add_rows {
-    my ($self, $rows) = @_;
+    my ($self, $rows, $styles) = @_;
     die "Rows must be arrayref" unless ref($rows) eq 'ARRAY';
-    $self->add_row($_) for @$rows;
+    $self->add_row($_, $styles) for @$rows;
     $self;
 }
 
@@ -341,19 +353,18 @@ sub cell_style {
     }
 }
 
-# put filtered/reordered columns (using column_filter) in _fcols (array of
-# names). put filtered and formatted rows in _frows (elements only contain the
-# rows to be shown, but the column indexes stays the same). there's also the
-# adjusted _frow_separators. should subsequently be used instead of raw
-# columns() and rows() during drawing.
-sub _filter_and_format_rows_and_cols {
+# filter columns & rows, calculate widths/paddings, format data, put the results
+# in _dd (draw data) attribute.
+sub _prepare_draw {
     my $self = shift;
 
+    $self->{_dd} = {};
     my $cf    = $self->{column_filter};
     my $rf    = $self->{row_filter};
     my $cols  = $self->{columns};
     my $rows  = $self->{rows};
 
+    # determine which columns to show
     my $fcols;
     if (ref($cf) eq 'CODE') {
         $fcols = [grep {$cf->($_)} @$cols];
@@ -363,97 +374,139 @@ sub _filter_and_format_rows_and_cols {
         $fcols = $cols;
     }
 
-    # build _frows and _frow_separators
-    my $frows = [];
-    my $frow_separators = [];
-    my $i = -1;
-    my $j = -1;
-    for my $row (@$rows) {
-        $i++;
-        if (ref($rf) eq 'CODE') {
-            next unless $rf->($row, $i);
-        } elsif ($rf) {
-            next unless $i ~~ $rf;
-        }
-        $j++;
-        push @$frows, $row;
-        push @$frow_separators, $j if $i ~~ $self->{_row_separators};
-    }
-
-    # XXX format columns
-    my %formatted; # a column can be shown >1x, avoid dupe formatting
-
-    # during the latter phase of drawing, use _frows and _scols instead of raw
-    # rows() and columns().
-    $self->{_frows} = $frows;
-    $self->{_frow_separators} = $frow_separators;
-    $self->{_fcols} = $fcols;
-}
-
-# calculate column widths and row heights, cache result in _hdims (header
-# dimensions, array, index = [colnums]), _ddims (data dimensions, index =
-# [row][colnums]), and _widths (column widths, index=[colnums]).
-sub _calc_widths_and_heights {
-    my $self = shift;
-
-    my $cols  = $self->{columns};
-    my $fcols = $self->{_fcols};
-    my $frows = $self->{_frows};
-
-    my @hdims;
+    # calculate widths/heights of header
+    my $fcol_widths = []; # index = [colnum]
+    my $header_height;
     {
         my %seen;
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            $hdims[$i] = ta_mbswidth_height($cols->[$i]);
+            my $wh = ta_mbswidth_height($cols->[$i]);
+            $fcol_widths->[$i] = $wh->[0];
+            $header_height = $wh->[1]
+                if !defined($header_height) || $header_height < $wh->[1];
         }
     }
+    $self->{_dd}{header_height} = $header_height;
 
-    my @ddims;
+    # calculate vertical paddings of data rows
+    my $frow_tpads  = []; # index = [frowidx]
+    my $frow_bpads  = []; # ditto
+    my $frows = [];
+    my $frow_separators = [];
+    my $frow_orig_index = []; # needed when accessing original row data
     {
+        my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl top padding
+        my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl botom pad
         my $i = -1;
-        for my $row (@$frows) {
+        my $j = -1;
+        for my $row (@$rows) {
             $i++;
-            my @rowdims;
+            if (ref($rf) eq 'CODE') {
+                next unless $rf->($row, $i);
+            } elsif ($rf) {
+                next unless $i ~~ $rf;
+            }
+            $j++;
+            push @$frows, [@$row]; # 1-level clone, for storing formatted values
+            push @$frow_separators, $j if $i ~~ $self->{_row_separators};
+            push @$frow_tpads, $self->row_style($i, 'tpad') //
+                $self->row_style($i, 'vpad') // $tpad;
+            push @$frow_bpads, $self->row_style($i, 'bpad') //
+                $self->row_style($i, 'vpad') // $bpad;
+            push @$frow_orig_index, $i;
+        }
+    }
+    $self->{_dd}{fcols}      = $fcols;
+    $self->{_dd}{frow_tpads} = $frow_tpads;
+    $self->{_dd}{frow_bpads} = $frow_bpads;
+
+    # apply column formats, calculate pads of columns
+    my $fcol_lpads  = []; # index = [colnum]
+    my $fcol_rpads  = []; # ditto
+    {
+        my $lpad = $self->{column_lpad} // $self->{column_pad}; # tbl-lvl leftp
+        my $rpad = $self->{column_rpad} // $self->{column_pad}; # tbl-lvl rightp
+        my %seen;
+        for my $i (0..@$cols-1) {
+            next unless $cols->[$i] ~~ $fcols;
+            next if $seen{$cols->[$i]}++;
+            my $fmts = $self->column_style($i, 'formats');
+            if (defined $fmts) {
+                require Data::Unixish::Apply;
+                my $res = Data::Unixish::Apply::apply(
+                    in => [map {$frows->[$_][$i]} 0..@$frows-1],
+                    functions => $fmts,
+                );
+                die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
+                    unless $res->[0] == 200;
+                $res = $res->[2];
+                for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] }
+            }
+            $fcol_lpads->[$i] = $self->column_style($i, 'lpad') //
+                $self->column_style($i, 'pad') // $lpad;
+            $fcol_rpads->[$i] = $self->column_style($i, 'rpad') //
+                $self->column_style($i, 'pad') // $rpad;
+        }
+    }
+    $self->{_dd}{fcol_lpads}  = $fcol_lpads;
+    $self->{_dd}{fcol_rpads}  = $fcol_rpads;
+
+    # apply cell formats, calculate widths/heights of data rows
+    my $frow_heights = []; # index = [frowidx]
+    {
+        my $cswidths = [map {$self->column_style($_, 'width')} 0..@$cols-1];
+        my $val;
+        for my $i (0..@$frows-1) {
             my %seen;
             for my $j (0..@$cols-1) {
                 next unless $cols->[$j] ~~ $fcols;
                 next if $seen{$cols->[$j]}++;
-                $rowdims[$j] = ta_mbswidth_height($row->[$j]);
+
+                # apply cell-level formats
+                my $fmts = $self->cell_style($i, $j, 'formats');
+                if (defined $fmts) {
+                    require Data::Unixish::Apply;
+                    my $origi = $frow_orig_index->[$j];
+                    my $res = Data::Unixish::Apply::apply(
+                        in => [ $rows->[$origi][$j] ],
+                        functions => $fmts,
+                    );
+                    die "Can't format cell ($origi, $cols->[$j]): ".
+                        "$res->[0] - $res->[1]" unless $res->[0] == 200;
+                    $frows->[$i][$j] = $res->[2][0];
+                }
+
+                # calculate heights/widths of data
+                my $wh = ta_mbswidth_height($frows->[$i][$j] // "");
+                $frow_heights->[$i] = $wh->[1]
+                    if !defined($frow_heights->[$i]) ||
+                        $frow_heights->[$i] < $wh->[1];
+                $val = $wh->[0];
+                if (defined $cswidths->[$j]) {
+                    if ($cswidths->[$j] < 0) {
+                        # widen to minimum width
+                        $val = -$cswidths->[$j] if $val < -$cswidths->[$j];
+                    } else {
+                        $val =  $cswidths->[$j] if $val <  $cswidths->[$j];
+                    }
+                }
+                $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
             }
-            push @ddims, \@rowdims;
         }
     }
-
-    my @widths;
-    {
-        my %seen;
-        my $width = 0;
-        for my $i (0..@$cols-1) {
-            next unless $cols->[$i] ~~ $fcols;
-            next if $seen{$cols->[$i]}++;
-            for my $ddim (@ddims) {
-                my $rwidth = 1;
-            }
-        }
-    }
-
-    $self->{_hdims}  = \@hdims;
-    $self->{_ddims}  = \@ddims;
-    $self->{_widths} = \@widths;
-
-    use Data::Dump::Color; dd $self;
+    $self->{_dd}{frow_heights} = $frow_heights;
+    $self->{_dd}{fcol_widths}  = $fcol_widths;
+    $self->{_dd}{frows}        = $frows;
 }
 
 sub draw {
     my ($self) = @_;
 
-    my ($i, $j);
+    my ($i, $j); #TMP
 
-    # determine each column's widths & each row's height
-    $self->_filter_and_format_rows_and_cols;
-    $self->_calc_widths_and_heights;
+    $self->_prepare_draw;
 
     my (@cwidths, @hwidths, @dwidths);
     return;
