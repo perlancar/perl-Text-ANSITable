@@ -4,6 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use Color::ANSI::Util qw(ansi256fg ansi256bg);
 use Term::ANSIColor;
 
 # VERSION
@@ -24,8 +25,15 @@ our %color_themes = (
     },
 
     default_256 => {
-        summary => 'Default for 256-color terminal',
+        summary => 'Default for 256-color terminal (black background)',
         colors => {
+            border      => ansi256fg('666666'),
+            cell        => '',
+
+            num_data    => '',
+            str_data    => '',
+            date_data   => '',
+            bool_data   => '',
         },
         256 => 1,
     },

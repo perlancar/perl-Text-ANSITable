@@ -50,6 +50,12 @@ has rows => (
     is      => 'rw',
     default => sub { [] },
 );
+has column_filter => (
+    is => 'rw',
+);
+has row_filter => (
+    is => 'rw',
+);
 has _row_separators => ( # [index after which sep should be drawn, ...] sorted
     is      => 'rw',
     default => sub { [] },
@@ -335,46 +341,122 @@ sub cell_style {
     }
 }
 
+# put filtered/reordered columns (using column_filter) in _fcols (array of
+# names). put filtered and formatted rows in _frows (elements only contain the
+# rows to be shown, but the column indexes stays the same). there's also the
+# adjusted _frow_separators. should subsequently be used instead of raw
+# columns() and rows() during drawing.
+sub _filter_and_format_rows_and_cols {
+    my $self = shift;
+
+    my $cf    = $self->{column_filter};
+    my $rf    = $self->{row_filter};
+    my $cols  = $self->{columns};
+    my $rows  = $self->{rows};
+
+    my $fcols;
+    if (ref($cf) eq 'CODE') {
+        $fcols = [grep {$cf->($_)} @$cols];
+    } elsif (ref($cf) eq 'ARRAY') {
+        $fcols = $cf;
+    } else {
+        $fcols = $cols;
+    }
+
+    # build _frows and _frow_separators
+    my $frows = [];
+    my $frow_separators = [];
+    my $i = -1;
+    my $j = -1;
+    for my $row (@$rows) {
+        $i++;
+        if (ref($rf) eq 'CODE') {
+            next unless $rf->($row, $i);
+        } elsif ($rf) {
+            next unless $i ~~ $rf;
+        }
+        $j++;
+        push @$frows, $row;
+        push @$frow_separators, $j if $i ~~ $self->{_row_separators};
+    }
+
+    # XXX format columns
+    my %formatted; # a column can be shown >1x, avoid dupe formatting
+
+    # during the latter phase of drawing, use _frows and _scols instead of raw
+    # rows() and columns().
+    $self->{_frows} = $frows;
+    $self->{_frow_separators} = $frow_separators;
+    $self->{_fcols} = $fcols;
+}
+
+# calculate column widths and row heights, cache result in _hdims (header
+# dimensions, array, index = [colnums]), _ddims (data dimensions, index =
+# [row][colnums]), and _widths (column widths, index=[colnums]).
+sub _calc_widths_and_heights {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $fcols = $self->{_fcols};
+    my $frows = $self->{_frows};
+
+    my @hdims;
+    {
+        my %seen;
+        for my $i (0..@$cols-1) {
+            next unless $cols->[$i] ~~ $fcols;
+            next if $seen{$cols->[$i]}++;
+            $hdims[$i] = ta_mbswidth_height($cols->[$i]);
+        }
+    }
+
+    my @ddims;
+    {
+        my $i = -1;
+        for my $row (@$frows) {
+            $i++;
+            my @rowdims;
+            my %seen;
+            for my $j (0..@$cols-1) {
+                next unless $cols->[$j] ~~ $fcols;
+                next if $seen{$cols->[$j]}++;
+                $rowdims[$j] = ta_mbswidth_height($row->[$j]);
+            }
+            push @ddims, \@rowdims;
+        }
+    }
+
+    my @widths;
+    {
+        my %seen;
+        my $width = 0;
+        for my $i (0..@$cols-1) {
+            next unless $cols->[$i] ~~ $fcols;
+            next if $seen{$cols->[$i]}++;
+            for my $ddim (@ddims) {
+                my $rwidth = 1;
+            }
+        }
+    }
+
+    $self->{_hdims}  = \@hdims;
+    $self->{_ddims}  = \@ddims;
+    $self->{_widths} = \@widths;
+
+    use Data::Dump::Color; dd $self;
+}
+
 sub draw {
     my ($self) = @_;
 
     my ($i, $j);
 
-    # determine each column's width
-    my @cwidths;
-    my @hwidths; # header's widths
-    my $hheight = 0;
-    $i = 0;
-    for my $c (@{ $self->{columns} }) {
-        my $wh = ta_mbswidth_height($c);
-        my $w = $wh->[0];
-        $w = 0 if $w < 0;
-        $cwidths[$i] = $hwidths[$i] = $w;
-        my $h = $wh->[1];
-        $hheight = $h if $hheight < $h;
-        $i++;
-    }
-    $j = 0;
-    my @dwidths;  # data row's widths ([row][col])
-    my @dheights; # data row's heights
-    for my $r (@{ $self->{rows} }) {
-        $i = 0;
-        for my $c (@$r) {
-            next unless defined($c);
-            my $wh = ta_mbswidth_height($c);
-            my $w = $wh->[0];
-            $dwidths[$j][$i] = $w;
-            $cwidths[$i] = $w if $cwidths[$i] < $w;
-            my $h = $wh->[1];
-            if (defined $dheights[$j]) {
-                $dheights[$j] = $h if $dheights[$j] > $h;
-            } else {
-                $dheights[$j] = $h;
-            }
-            $i++;
-        }
-        $j++;
-    }
+    # determine each column's widths & each row's height
+    $self->_filter_and_format_rows_and_cols;
+    $self->_calc_widths_and_heights;
+
+    my (@cwidths, @hwidths, @dwidths);
+    return;
 
     my $bs = $self->{border_style};
     my $ch = $bs->{chars};
@@ -569,11 +651,11 @@ the C<chars> specification key:
  L   M   N
  StttUtttV        Bottom border characters
 
-Each character must have visual width of 1. If A is an empty string, the top
-border line will not be drawn. If H is an empty string, the header-data
-separator line will not be drawn. If O is an empty string, data separator lines
-will not be drawn. If S is an empty string, bottom border line will not be
-drawn.
+Each character must have visual width of 1. But if A is an empty string, the top
+border line will not be drawn. Likewise: if H is an empty string, the
+header-data separator line will not be drawn; if O is an empty string, data
+separator lines will not be drawn; if S is an empty string, bottom border line
+will not be drawn.
 
 
 =head1 COLOR THEMES
@@ -600,7 +682,9 @@ also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
-modules for example, like L<Text::ANSITable::ColorTheme::Default>.
+modules for example, like L<Text::ANSITable::ColorTheme::Default>. Each color
+specified in the specification must be ANSI escape codes (e.g. "\e[31;1m" for
+bold red, or "\e[38;5;226m" for lemon yellow.
 
 
 =head1 COLUMN WIDTHS
@@ -782,6 +866,22 @@ Store row data.
 =head2 columns => ARRAY OF STR
 
 Store column names.
+
+=head2 row_filter => CODE|ARRAY OF INT
+
+When drawing, only show rows that match this. Can be a coderef which will
+receive ($row, $i) and should return bool (true means show this row). Or, can be
+an array which contains indices of rows that should be shown (e.g. C<< [0, 1, 3,
+4] >>).
+
+=head2 column_filter => CODE|ARRAY OF STR
+
+When drawing, only show columns that match this. Can be a coderef which will
+receive C<< ($colname, $colidx) >> and should return bool (true means show this
+column). Or, can be an array which contains names of columns that should be
+shown (e.g. C<< ['num', 'size'] >>). The array form can also be used to reorder
+columns or show a column multiple times (e.g. C<< ['num', ..., 'num'] >> for
+display.
 
 =head2 use_color => BOOL
 
