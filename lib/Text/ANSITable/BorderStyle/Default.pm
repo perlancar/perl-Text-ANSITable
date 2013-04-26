@@ -323,8 +323,6 @@ our %border_styles = (
             ["│"," "," ","┃"],
             ["┕","━","━","┛"],
         ],
-        before_draw_border => "",
-        after_draw_border  => "",
     },
 
 );
