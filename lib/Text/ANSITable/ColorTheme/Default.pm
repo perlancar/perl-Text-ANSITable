@@ -14,6 +14,7 @@ our %color_themes = (
     no_color => {
         summary => 'Special theme that means no color',
         colors => {
+            reset => "",
         },
         no_color => 1,
     },
@@ -21,14 +22,17 @@ our %color_themes = (
     default_16 => {
         summary => 'Default for 16-color terminal',
         colors => {
+            reset => "\e[0m",
         },
     },
 
     default_256 => {
         summary => 'Default for 256-color terminal (black background)',
         colors => {
-            border      => ansi256fg('666666'),
-            cell        => '',
+            reset       => "\e[0m",
+
+            border      => ansi256fg('ff4499'),
+            cell_bg     => '',
 
             num_data    => '',
             str_data    => '',

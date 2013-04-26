@@ -8,7 +8,7 @@ use Moo;
 
 #use List::Util 'first';
 use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util 'ta_mbswidth_height';
+use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad);
 
 # VERSION
 
@@ -63,6 +63,10 @@ has _row_separators => ( # [index after which sep should be drawn, ...] sorted
 has show_row_separator => (
     is      => 'rw',
     default => sub { 0 },
+);
+has show_header => (
+    is      => 'rw',
+    default => sub { 1 },
 );
 has _column_styles => ( # store per-column styles
     is      => 'rw',
@@ -504,96 +508,120 @@ sub _prepare_draw {
 sub draw {
     my ($self) = @_;
 
-    my ($i, $j); #TMP
-
     $self->_prepare_draw;
 
-    my (@cwidths, @hwidths, @dwidths);
-    return;
+    my $cols  = $self->{cols};
+    my $fcols = $self->{_dd}{fcols};
+    my $frows = $self->{_dd}{frows};
+    my $fcol_lpads  = $self->{_dd}{fcol_lpads};
+    my $fcol_rpads  = $self->{_dd}{fcol_rpads};
+    my $frow_tpads  = $self->{_dd}{frow_tpads};
+    my $frow_bpads  = $self->{_dd}{frow_bpads};
+    my $fcol_widths = $self->{_dd}{fcol_widths};
 
-    my $bs = $self->{border_style};
-    my $ch = $bs->{chars};
+    my $bs  = $self->{border_style};
+    my $bch = $bs->{chars};
 
     my $bb = $bs->{box_chars} ? "\e(0" : "";
     my $ab = $bs->{box_chars} ? "\e(B" : "";
-    my $cols = $self->{columns};
 
-    my @t;
+    my $colors = $self->{color_theme}{colors};
 
-    # draw top border
-    push @t, $bb, $ch->[0][0];
-    $i = 0;
-    for my $c (@$cols) {
-        push @t, $ch->[0][1] x $cwidths[$i];
-        $i++;
-        push @t, $i == @$cols ? $ch->[0][3] : $ch->[0][2];
+    my @s; # the result string
+
+    my $draw_bch = sub {
+        push @s, $colors->{border} // "", $bb;
+        while (my ($y, $x, $n) = splice @_, 0, 3) {
+            push @s, $bch->[$y][$x] x ($n // 1);
+        }
+        push @s, $ab, $colors->{reset};
+    };
+
+    # draw border top line
+    {
+        last unless length($bch->[0][0]);
+        my @b;
+        push @b, 0, 0, 1;
+        for my $i (0..@$fcols-1) {
+            my $ci = $self->_colidx($fcols->[$i]);
+            push @b, 0, 1,
+                $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
+            push @b, 0, $i==@$fcols-1 ? 3:2, 1;
+        }
+        $draw_bch->(@b);
+        push @s, "\n";
     }
-    push @t, $ab, "\n";
 
     # draw header
-    push @t, $bb, $ch->[1][0], $ab;
-    $i = 0;
-    for my $c (@$cols) {
-        push @t, $c, (" " x ($cwidths[$i] - $hwidths[$i]));
-        $i++;
-        push @t, $bb, ($i == @$cols ? $ch->[1][2] : $ch->[1][1]), $ab;
-    }
-    push @t, "\n";
+    if ($self->{show_header}) {
+        $draw_bch->(1, 0);
 
-    # draw header-data separator
-    push @t, $bb, $ch->[2][0];
-    $i = 0;
-    for my $c (@$cols) {
-        push @t, $ch->[2][1] x $cwidths[$i];
-        $i++;
-        push @t, $i == @$cols ? $ch->[2][3] : $ch->[2][2];
+        for my $i (0..@$fcols-1) {
+            my $ci = $self->_colidx($fcols->[$i]);
+            push @s, " " x $fcol_lpads->[$ci];
+            my $cell = ta_mbpad(
+                $fcols->[$i], $fcol_widths->[$ci], "r", " ", 1);
+            # XXX give cell fgcolor/bgcolor ...
+            push @s, $cell;
+            push @s, " " x $fcol_rpads->[$ci];
+
+            $draw_bch->(1, $i == @$fcols-1 ? 2:1);
+        }
+        push @s, "\n";
     }
-    push @t, $ab, "\n";
+
+    # draw header-data row separator
+    if ($self->{show_header} && length($bch->[2][0])) {
+        my @b;
+        push @b, 2, 0, 1;
+        for my $i (0..@$fcols-1) {
+            my $ci = $self->_colidx($fcols->[$i]);
+            push @b, 2, 1,
+                $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
+            push @b, 2, $i==@$fcols-1 ? 3:2, 1;
+        }
+        $draw_bch->(@b);
+        push @s, "\n";
+    }
 
     # draw data rows
-    $j = 0;
-    for my $r0 (@{$self->{rows}}) {
-        my @r = @$r0;
-        $r[@cwidths-1] = undef if @r < @cwidths; # pad with undefs
+    {
+        for my $r (0..@$frows-1) {
+            $draw_bch->(3, 0);
+            for my $i (0..@$fcols-1) {
+                my $ci = $self->_colidx($fcols->[$i]);
+                push @s, " " x $fcol_lpads->[$ci];
+                my $cell = ta_mbpad(
+                    $frows->[$r][$i], $fcol_widths->[$ci], "r", " ", 1);
+                # XXX give cell fgcolor/bgcolor ...
+                push @s, $cell;
+                push @s, " " x $fcol_rpads->[$ci];
 
-        # draw data row
-        push @t, $bb, $ch->[3][0], $ab;
-        $i = 0;
-        for my $c (@r) {
-            $c //= ''; $dwidths[$j][$i] //= 0;
-            push @t, $c, (" " x ($cwidths[$i] - $dwidths[$j][$i]));
-            $i++;
-            push @t, $bb, ($i == @$cols ? $ch->[3][2] : $ch->[3][1]), $ab;
-        }
-        push @t, "\n";
-
-        # draw separator between data rows
-        if ($self->{show_row_separator} && $j < @{$self->{rows}}-1) {
-            push @t, $bb, $ch->[4][0];
-            $i = 0;
-            for my $c (@$cols) {
-                push @t, $ch->[4][1] x $cwidths[$i];
-                $i++;
-                push @t, $i == @$cols ? $ch->[4][3] : $ch->[4][2];
+                $draw_bch->(3, $i == @$fcols-1 ? 2:1);
             }
-            push @t, $ab, "\n";
+            push @s, "\n";
         }
-
-        $j++;
     }
 
-    # draw bottom border
-    push @t, $bb, $ch->[5][0];
-    $i = 0;
-    for my $c (@$cols) {
-        push @t, $ch->[5][1] x $cwidths[$i];
-        $i++;
-        push @t, $i == @$cols ? $ch->[5][3] : $ch->[5][2];
-    }
-    push @t, $ab;
+    # XXX draw row separator
 
-    #use Data::Dump; dd \@t;
-    join "", @t;
+    # draw border bottom line
+    {
+        last unless length($bch->[5][0]);
+        my @b;
+        push @b, 5, 0, 1;
+        for my $i (0..@$fcols-1) {
+            my $ci = $self->_colidx($fcols->[$i]);
+            push @b, 5, 1,
+                $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
+            push @b, 5, $i==@$fcols-1 ? 3:2, 1;
+        }
+        $draw_bch->(@b);
+        push @s, "\n";
+    }
+
+
+    join "", @s;
 }
 
 1;
