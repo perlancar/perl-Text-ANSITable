@@ -131,7 +131,7 @@ sub BUILD {
         my $bs;
         if ($self->{use_utf8}) {
             $bs = 'bricko';
-        } elsif ($self->use_box_chars) {
+        } elsif ($self->{use_box_chars}) {
             $bs = 'single_boxchar';
         } else {
             $bs = 'single_ascii';
@@ -224,9 +224,20 @@ sub border_style {
     my $bs = shift;
 
     if (!ref($bs)) {
-        my $all_bs = $self->list_border_styles(1);
-        $all_bs->{$bs} or die "Unknown border style name '$bs'";
-        $bs = $all_bs->{$bs};
+        my $bss;
+        my $pkg;
+        if ($bs =~ s/(.+):://) {
+            $pkg = $1;
+            my $pkgp = $pkg; $pkgp =~ s!::!/!g;
+            require "Text/ANSITable/BorderStyle/$pkgp.pm";
+            no strict 'refs';
+            $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
+        } else {
+            $bss = $self->list_border_styles(1);
+        }
+        $bss->{$bs} or die "Unknown border style name '$bs'".
+            ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
+        $bs = $bss->{$bs};
     }
 
     my $err;
@@ -249,9 +260,20 @@ sub color_theme {
     my $p2;
     if (!ref($ct)) {
         $p2 = " named $ct";
-        my $all_ct = $self->list_color_themes(1);
-        $all_ct->{$ct} or die "Unknown color theme name '$ct'";
-        $ct = $all_ct->{$ct};
+        my $cts;
+        my $pkg;
+        if ($ct =~ s/(.+):://) {
+            $pkg = $1;
+            my $pkgp = $pkg; $pkgp =~ s!::!/!g;
+            require "Text/ANSITable/ColorTheme/$pkgp.pm";
+            no strict 'refs';
+            $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
+        } else {
+            $cts = $self->list_color_themes(1);
+        }
+        $cts->{$ct} or die "Unknown color theme name '$ct'".
+            ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
+        $ct = $cts->{$ct};
     }
 
     my $err;
@@ -780,6 +802,13 @@ border style or a border specification directly.
 If no border style is selected explicitly, a nice default will be chosen. You
 can also the C<ANSITABLE_BORDER_STYLE> environment variable to set the default.
 
+When there are lots of C<Text::ANSITable::BorderStyle::*> modules, searching can
+add some overhead. To avoid searching in all modules, you can specify name using
+C<Subpackage::Name> syntax, e.g.:
+
+ # will only search in Text::ANSITable::BorderStyle::Default
+ $t->color_theme("Default::bricko");
+
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
 modules for example, like L<Text::ANSITable::BorderStyle::Default>. Format for
@@ -831,6 +860,13 @@ color theme or a border specification directly.
 If no color theme is selected explicitly, a nice default will be chosen. You can
 also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
+When there are lots of C<Text::ANSITable::ColorTheme::*> modules, searching can
+add some overhead. To avoid searching in all modules, you can specify name using
+C<Subpackage::Name> syntax, e.g.:
+
+ # will only search in Text::ANSITable::ColorTheme::Default
+ $t->color_theme("Default::default_256");
+
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
@@ -842,6 +878,7 @@ color, random color, etc (see L<Text::ANSITable::ColorTheme::Demo>). Code will
 be called with ($self, %args) where %args contains various information, like
 C<name> (the item name being requested). You can get the row position from C<<
 $self->{_draw}{y} >>.
+
 
 =head1 COLUMN WIDTHS
 
