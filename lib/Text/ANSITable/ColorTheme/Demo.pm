@@ -26,12 +26,17 @@ our %color_themes = (
 
     demo_gradation_border_color => {
         summary => 'Demoes coderef in item color',
+        description => <<'_',
+
+Accept arguments 'border1' and 'border2' to set first and second RGB colors.
+
+_
         colors => {
             border => sub {
                 my ($self, %args) = @_;
 
-                my $rgb1 = 'ffffff';
-                my $rgb2 = '800000';
+                my $rgb1 = $self->{color_theme_args}{border1} // 'ffffff';
+                my $rgb2 = $self->{color_theme_args}{border2} // '444444';
 
                 my $y;
                 my $num_rows = @{$self->{_draw}{frows}};

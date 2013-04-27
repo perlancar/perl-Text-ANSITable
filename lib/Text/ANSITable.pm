@@ -112,6 +112,15 @@ has column_align => (
 has row_valign => (
     is => 'rw',
 );
+has color_theme_args => (
+    is      => 'rw',
+    default => sub { {} },
+);
+# not yet
+#has border_style_args => (
+#    is      => 'rw',
+#    default => sub { {} },
+#);
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -1063,6 +1072,10 @@ Color theme specification to use.
 
 You can set this attribute's value with a specification or color theme name. See
 L<"/COLOR THEMES"> for more details.
+
+=head2 color_theme_args => HASH
+
+Some color themes can accept arguments. You can set it here.
 
 =head2 show_header => BOOL (default: 1)
 
