@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.01    2013-04-28 (SHARYANTO) (not yet released)
+
+        First "real" release (substantial features implemented). Some border
+        styles and color themes separated to
+        Text::ANSITable::{BorderStyle,ColorTheme}::Extra.
+
+
 0.00    2013-04-12 (SHARYANTO)
 
         First, very very very minimal release.
