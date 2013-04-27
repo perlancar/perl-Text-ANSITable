@@ -16,9 +16,8 @@ our %color_themes = (
         colors => {
             border => sub {
                 my ($self, %args) = @_;
-                my $rgb = sprintf("%02x%02x%02x",
-                                  rand()*256, rand()*256, rand()*256);
-                ansi256fg($rgb);
+                sprintf("%02x%02x%02x",
+                        rand()*256, rand()*256, rand()*256);
             },
         },
         256 => 1,
@@ -28,7 +27,7 @@ our %color_themes = (
         summary => 'Demoes coderef in item color',
         description => <<'_',
 
-Accept arguments 'border1' and 'border2' to set first and second RGB colors.
+Accept arguments C<border1> and C<border2> to set first and second RGB colors.
 
 _
         colors => {
@@ -54,9 +53,8 @@ _
                 }
 
                 my $rgb = mix_2_rgb_colors($rgb1, $rgb2, $y/($num_rows+3));
-                my $res = ansi24bfg($rgb);
                 #say "D:$rgb";
-                $res;
+                $rgb;
             },
         },
         '24bit' => 1,

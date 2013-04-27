@@ -9,24 +9,25 @@ use Moo;
 #use List::Util 'first';
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad);
+use Color::ANSI::Util qw(ansi16fg ansi16bg
+                         ansi256fg ansi256bg
+                         ansi24bfg ansi24bbg
+                         detect_color_depth
+                    );
 
 # VERSION
 
 has use_color => (
     is      => 'rw',
     default => sub {
-        return $ENV{COLOR} if defined $ENV{COLOR};
-        if (-t STDOUT) {
-            # detect konsole, assume recent enough to support 24bit
-            return 2**24 if $ENV{KONSOLE_DBUS_SERVICE}
-                || $ENV{KONSOLE_DBUS_SESSION};
-            if (($ENV{TERM} // "") =~ /256color/) {
-                return 256;
-            }
-            return 16;
-        } else {
-            return 0;
-        }
+        $ENV{COLOR} // (-t STDOUT) // 1;
+    },
+);
+has color_depth => (
+    is      => 'rw',
+    default => sub {
+        return $ENV{COLOR_DEPTH} if defined $ENV{COLOR_DEPTH};
+        return detect_color_depth() // 16;
     },
 );
 has use_box_chars => (
@@ -128,7 +129,7 @@ sub BUILD {
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
-        if ($self->use_utf8) {
+        if ($self->{use_utf8}) {
             $bs = 'bricko';
         } elsif ($self->use_box_chars) {
             $bs = 'single_boxchar';
@@ -138,11 +139,11 @@ sub BUILD {
         $self->border_style($bs);
     }
 
-    # pick a default border style
+    # pick a default color theme
     unless ($self->{color_theme}) {
         my $ct;
-        if ($self->use_color) {
-            if ($self->use_color >= 256) {
+        if ($self->{use_color}) {
+            if ($self->{color_depth} >= 256) {
                 $ct = 'default_256';
             } else {
                 $ct = 'default_16';
@@ -253,15 +254,7 @@ sub color_theme {
 
     my $err;
     if (!$ct->{no_color} && !$self->use_color) {
-        $err = "use_color is set to false";
-    } elsif (!$ct->{no_color} && $ct->{'24bit'} &&
-                 (!$self->use_color || $self->use_color < 2**24)) {
-        $err = "color theme is for 24bit colors, ".
-            "but use_color is not set to 24bit (2**24) colors";
-    } elsif (!$ct->{no_color} && $ct->{256} &&
-                 (!$self->use_color || $self->use_color < 256)) {
-        $err = "color theme is for 256 colors, ".
-            "but use_color is not set to 256 colors";
+        $err = "color theme uses color but use_color is set to false";
     }
     die "Can't select color theme$p2: $err" if $err;
 
@@ -552,18 +545,29 @@ sub draw_str {
 sub draw_color {
     my ($self, $name, $args) = @_;
 
+    return if $self->{color_theme}{no_color};
     my $c = $self->{color_theme}{colors}{$name};
     return unless defined($c) && length($c);
+
     if (ref($c) eq 'CODE') {
         $c = $c->($self, name=>$name, %$args);
+    }
+    unless (index("\e[", $c) >= 0) {
+        if ($self->{color_depth} >= 2**24) {
+            $c = $name =~ /_bg$/ ? ansi24bbg($c) : ansi24bfg($c);
+        } elsif ($self->{color_depth} >= 256) {
+            $c = $name =~ /_bg$/ ? ansi256bg($c) : ansi256fg($c);
+        } else {
+            $c = $name =~ /_bg$/ ? ansi16bg($c) : ansi16fg($c);
+        }
     }
     $self->draw_str($c);
 }
 
 sub draw_color_reset {
     my $self = shift;
-    $self->{color_theme}{colors}{reset} //= "\e[0m";
-    $self->draw_color('reset');
+    return if $self->{color_theme}{no_color};
+    $self->draw_str("\e[0m");
 }
 
 # draw border character(s). drawing border character involves setting border
@@ -828,12 +832,14 @@ also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
-items must be specified as ANSI escape codes (e.g. "\e[31;1m" for bold red, or
-"\e[38;5;226m" for lemon yellow). For flexibility, color can also be a coderef
-which should produce ANSI escape code. This allows you to do, e.g. gradation
-border color, random color, etc. Code will be called with ($self, %args) where
-%args contains various information, like C<name> (the item name being
-requested). You can get the row position from C<< $self->{_draw}{y} >>.
+items must be specified as 6-hexdigit RGB value (like C<ff0088>) or ANSI escape
+codes (e.g. "\e[31;1m" for bold red foregound color, or "\e[48;5;226m" for lemon
+yellow background color). For flexibility, color can also be a coderef which
+should produce a color value. This allows you to do, e.g. gradation border
+color, random color, etc (see L<Text::ANSITable::ColorTheme::Demo>). Code will
+be called with ($self, %args) where %args contains various information, like
+C<name> (the item name being requested). You can get the row position from C<<
+$self->{_draw}{y} >>.
 
 =head1 COLUMN WIDTHS
 
@@ -1042,6 +1048,12 @@ exception.
 normal/plain string routines instead of the slower ta_* functions from
 L<Text::ANSI::Util>).
 
+=head2 color_depth => INT
+
+Terminal's color depth. Either 16, 256, or 2**24 (16777216). Default will be
+retrieved from C<COLOR_DEPTH> environment or detected using
+C<Color::ANSI::Util>'s detect_color_depth().
+
 =head2 use_box_chars => BOOL
 
 Whether to use box characters. Default is taken from C<BOX_CHARS> environment
@@ -1191,6 +1203,10 @@ Render table.
 =head2 COLOR => BOOL
 
 Can be used to set default value for the C<color> attribute.
+
+=head2 COLOR_DEPTH => INT
+
+Can be used to set default value for the C<color_depth> attribute.
 
 =head2 BOX_CHARS => BOOL
 
