@@ -754,8 +754,8 @@ or L<Text::SimpleTable>, with the following differences:
 
 =item * Colors and color themes
 
-ANSI color codes will be used by default, but will degrade to black and white if
-terminal does not support them.
+ANSI color codes will be used by default (even 256 and 24bit colors), but will
+degrade to lower color depth and black/white according to terminal support.
 
 =item * Box-drawing characters
 
@@ -798,7 +798,8 @@ border style or a border specification directly.
  $t->border_style({ ... }); # set specification directly
 
 If no border style is selected explicitly, a nice default will be chosen. You
-can also the C<ANSITABLE_BORDER_STYLE> environment variable to set the default.
+can also set the C<ANSITABLE_BORDER_STYLE> environment variable to set the
+default.
 
 When there are lots of C<Text::ANSITable::BorderStyle::*> modules, searching can
 add some overhead. To avoid searching in all modules, you can specify name using
@@ -856,7 +857,7 @@ color theme or a border specification directly.
  $t->color_theme({ ... });  # set specification directly
 
 If no color theme is selected explicitly, a nice default will be chosen. You can
-also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
+also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
 When there are lots of C<Text::ANSITable::ColorTheme::*> modules, searching can
 add some overhead. To avoid searching in all modules, you can specify name using
