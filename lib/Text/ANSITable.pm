@@ -740,8 +740,6 @@ sub draw {
  $t->add_row(["chiki"      , "yellow",  2000]);
  $t->add_row(["lays"       , "green" ,  7000]);
  $t->add_row(["tao kae noi", "blue"  , 18500]);
- my $color = $t->cell(2, 1); # => "blue"
- $t->cell(2, 1, "red");
 
  # draw it!
  say $t->draw;
