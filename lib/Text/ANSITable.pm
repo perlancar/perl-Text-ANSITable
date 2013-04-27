@@ -234,7 +234,9 @@ sub color_theme {
     if (!@_) { return $self->{color_theme} }
     my $ct = shift;
 
+    my $p2;
     if (!ref($ct)) {
+        $p2 = " named $ct";
         my $all_ct = $self->list_color_themes(1);
         $all_ct->{$ct} or die "Unknown color theme name '$ct'";
         $ct = $all_ct->{$ct};
@@ -243,11 +245,16 @@ sub color_theme {
     my $err;
     if (!$ct->{no_color} && !$self->use_color) {
         $err = "use_color is set to false";
+    } elsif (!$ct->{no_color} && $ct->{'24bit'} &&
+                 (!$self->use_color || $self->use_color < 2**24)) {
+        $err = "color theme is for 24bit colors, ".
+            "but use_color is not set to 24bit (2**24) colors";
     } elsif (!$ct->{no_color} && $ct->{256} &&
                  (!$self->use_color || $self->use_color < 256)) {
-        $err = "use_color is not set to 256 color";
+        $err = "color theme is for 256 colors, ".
+            "but use_color is not set to 256 colors";
     }
-    die "Can't select color theme: $err" if $err;
+    die "Can't select color theme$p2: $err" if $err;
 
     $self->{color_theme} = $ct;
 }
@@ -557,11 +564,16 @@ sub draw_color_reset {
 # characters to print. n defaults to 1 if not specified.
 sub draw_bch {
     my $self = shift;
+    my $args = shift if ref($_[0]) eq 'HASH';
 
     $self->draw_str($self->{_draw}{set_line_draw_mode});
     while (my ($y, $x, $n) = splice @_, 0, 3) {
         $n //= 1;
-        $self->draw_color('border', {bch=>[$y, $x, $n]});
+        if ($args) {
+            $self->draw_color('border', {bch=>[$y, $x, $n], %$args});
+        } else {
+            $self->draw_color('border', {bch=>[$y, $x, $n]});
+        }
         $self->draw_str($self->{border_style}{chars}[$y][$x] x $n);
         $self->draw_color_reset;
     }
@@ -633,7 +645,7 @@ sub draw {
     # draw data rows
     {
         for my $r (0..@$frows-1) {
-            $self->draw_bch(3, 0);
+            $self->draw_bch({row_idx=>$r}, 3, 0);
             for my $i (0..@$fcols-1) {
                 my $ci = $self->_colidx($fcols->[$i]);
                 my $cell = ta_mbpad(
@@ -641,7 +653,7 @@ sub draw {
                 # XXX give cell fgcolor/bgcolor ...
                 $self->draw_str(
                     " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
-                $self->draw_bch(3, $i == @$fcols-1 ? 2:1);
+                $self->draw_bch({row_idx=>$r}, 3, $i == @$fcols-1 ? 2:1);
             }
             $self->draw_str("\n");
         }

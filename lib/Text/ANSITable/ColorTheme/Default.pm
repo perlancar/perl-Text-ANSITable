@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Color::ANSI::Util qw(ansi256fg ansi256bg);
-use Term::ANSIColor;
+#use Term::ANSIColor;
 
 # VERSION
 
@@ -35,19 +35,6 @@ our %color_themes = (
             str_data    => '',
             date_data   => '',
             bool_data   => '',
-        },
-        256 => 1,
-    },
-
-    demo_random_border_color => {
-        summary => 'Demoes coderef in item color',
-        colors => {
-            border => sub {
-                my ($self, %args) = @_;
-                my $rgb = sprintf("%02x%02x%02x",
-                                  rand()*256, rand()*256, rand()*256);
-                ansi256fg($rgb);
-            },
         },
         256 => 1,
     },
