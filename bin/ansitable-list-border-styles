@@ -18,11 +18,11 @@ if ($ARGV[0]) {
 
 my $all_bs = $t->list_border_styles(1);
 
-$t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
+$t->columns(['Name', 'Module', 'Summary', 'box_chars?', 'utf8?']);
 for my $name (sort keys %$all_bs) {
     my $bs = $all_bs->{$name};
     $t->add_row(
-        [$name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0]);
+        [$name, $bs->{module}, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0]);
 }
 
 say "Tip: you can run me with border style name as argument to try it out.";

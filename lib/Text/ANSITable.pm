@@ -173,6 +173,7 @@ sub list_border_styles {
             my $bs = \%{"$mod\::border_styles"};
             for (keys %$bs) {
                 $bs->{$_}{name} = $_;
+                $bs->{$_}{module} = $mod;
                 $all_bs->{$_} = $bs->{$_};
             }
         }
@@ -203,6 +204,7 @@ sub list_color_themes {
             my $ct = \%{"$mod\::color_themes"};
             for (keys %$ct) {
                 $ct->{$_}{name} = $_;
+                $ct->{$_}{module} = $mod;
                 $all_ct->{$_} = $ct->{$_};
             }
         }

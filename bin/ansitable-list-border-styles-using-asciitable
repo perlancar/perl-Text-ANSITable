@@ -15,11 +15,11 @@ my $t = Text::ANSITable->new;
 my $all_bs = $t->list_border_styles(1);
 
 $t = Text::ASCIITable->new;
-$t->setCols('name', 'summary', 'box_chars?', 'utf8?');
+$t->setCols('name', 'module', 'summary', 'box_chars?', 'utf8?');
 for my $name (sort keys %$all_bs) {
     my $bs = $all_bs->{$name};
     $t->addRow(
-        $name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0);
+        $name, $bs->{module}, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0);
 }
 
 print $t;

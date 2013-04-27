@@ -15,10 +15,10 @@ my $t = Text::ANSITable->new;
 my $all_ct = $t->list_color_themes(1);
 
 $t = Text::ASCIITable->new;
-$t->setCols('name', 'summary', '256');
+$t->setCols('name', 'module', 'summary', '256');
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
-    $t->addRow($name, $ct->{summary}, $ct->{256} ? 1:0);
+    $t->addRow($name, $ct->{module}, $ct->{summary}, $ct->{256} ? 1:0);
 }
 
 print $t;
