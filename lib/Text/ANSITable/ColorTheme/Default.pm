@@ -22,15 +22,12 @@ our %color_themes = (
     default_16 => {
         summary => 'Default for 16-color terminal',
         colors => {
-            reset => "\e[0m",
         },
     },
 
     default_256 => {
         summary => 'Default for 256-color terminal (black background)',
         colors => {
-            reset       => "\e[0m",
-
             border      => ansi256fg('ff4499'),
             cell_bg     => '',
 
@@ -38,6 +35,19 @@ our %color_themes = (
             str_data    => '',
             date_data   => '',
             bool_data   => '',
+        },
+        256 => 1,
+    },
+
+    demo_random_border_color => {
+        summary => 'Demoes coderef in item color',
+        colors => {
+            border => sub {
+                my ($self, %args) = @_;
+                my $rgb = sprintf("%02x%02x%02x",
+                                  rand()*256, rand()*256, rand()*256);
+                ansi256fg($rgb);
+            },
         },
         256 => 1,
     },

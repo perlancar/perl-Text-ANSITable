@@ -358,11 +358,21 @@ sub cell_style {
 }
 
 # filter columns & rows, calculate widths/paddings, format data, put the results
-# in _dd (draw data) attribute.
+# in _draw (draw data) attribute.
 sub _prepare_draw {
     my $self = shift;
 
-    $self->{_dd} = {};
+    $self->{_draw} = {};
+    $self->{_draw}{y} = 0;
+    $self->{_draw}{buf} = [];
+
+    # ansi codes to set and reset line-drawing mode.
+    {
+        my $bs = $self->{border_style};
+        $self->{_draw}{set_line_draw_mode}   = $bs->{box_chars} ? "\e(0" : "";
+        $self->{_draw}{reset_line_draw_mode} = $bs->{box_chars} ? "\e(B" : "";
+    }
+
     my $cf    = $self->{column_filter};
     my $rf    = $self->{row_filter};
     my $cols  = $self->{columns};
@@ -392,7 +402,7 @@ sub _prepare_draw {
                 if !defined($header_height) || $header_height < $wh->[1];
         }
     }
-    $self->{_dd}{header_height} = $header_height;
+    $self->{_draw}{header_height} = $header_height;
 
     # calculate vertical paddings of data rows
     my $frow_tpads  = []; # index = [frowidx]
@@ -422,9 +432,9 @@ sub _prepare_draw {
             push @$frow_orig_index, $i;
         }
     }
-    $self->{_dd}{fcols}      = $fcols;
-    $self->{_dd}{frow_tpads} = $frow_tpads;
-    $self->{_dd}{frow_bpads} = $frow_bpads;
+    $self->{_draw}{fcols}      = $fcols;
+    $self->{_draw}{frow_tpads} = $frow_tpads;
+    $self->{_draw}{frow_bpads} = $frow_bpads;
 
     # apply column formats, calculate pads of columns
     my $fcol_lpads  = []; # index = [colnum]
@@ -454,8 +464,8 @@ sub _prepare_draw {
                 $self->column_style($i, 'pad') // $rpad;
         }
     }
-    $self->{_dd}{fcol_lpads}  = $fcol_lpads;
-    $self->{_dd}{fcol_rpads}  = $fcol_rpads;
+    $self->{_draw}{fcol_lpads}  = $fcol_lpads;
+    $self->{_draw}{fcol_rpads}  = $fcol_rpads;
 
     # apply cell formats, calculate widths/heights of data rows
     my $frow_heights = []; # index = [frowidx]
@@ -500,9 +510,62 @@ sub _prepare_draw {
             }
         }
     }
-    $self->{_dd}{frow_heights} = $frow_heights;
-    $self->{_dd}{fcol_widths}  = $fcol_widths;
-    $self->{_dd}{frows}        = $frows;
+    $self->{_draw}{frow_heights} = $frow_heights;
+    $self->{_draw}{fcol_widths}  = $fcol_widths;
+    $self->{_draw}{frows}        = $frows;
+}
+
+# push string into the drawing buffer. also updates "cursor" position.
+sub draw_str {
+    my $self = shift;
+    # currently x position is not recorded because this involves doing
+    # ta_mbswidth() (or ta_mbswidth_height()) for every string, which is rather
+    # expensive. so only the y position is recorded by counting newlines.
+
+    for (@_) {
+        my $num_nl = 0;
+        $num_nl++ while /\r?\n/og;
+        push @{$self->{_draw}{buf}}, $_;
+        $self->{_draw}{y} += $num_nl;
+    }
+    $self;
+}
+
+# pick color from color theme. args is a hashref to be supplied to color coderef
+# if the color from the theme is a coderef.
+sub draw_color {
+    my ($self, $name, $args) = @_;
+
+    my $c = $self->{color_theme}{colors}{$name};
+    return unless defined($c) && length($c);
+    if (ref($c) eq 'CODE') {
+        $c = $c->($self, name=>$name, %$args);
+    }
+    $self->draw_str($c);
+}
+
+sub draw_color_reset {
+    my $self = shift;
+    $self->{color_theme}{colors}{reset} //= "\e[0m";
+    $self->draw_color('reset');
+}
+
+# draw border character(s). drawing border character involves setting border
+# color, setting drawing mode (for boxchar styles), aside from drawing the
+# actual characters themselves. arguments are list of (y, x, n) tuples where y
+# and x are the row and col number of border character, n is the number of
+# characters to print. n defaults to 1 if not specified.
+sub draw_bch {
+    my $self = shift;
+
+    $self->draw_str($self->{_draw}{set_line_draw_mode});
+    while (my ($y, $x, $n) = splice @_, 0, 3) {
+        $n //= 1;
+        $self->draw_color('border', {bch=>[$y, $x, $n]});
+        $self->draw_str($self->{border_style}{chars}[$y][$x] x $n);
+        $self->draw_color_reset;
+    }
+    $self->draw_str($self->{_draw}{reset_line_draw_mode});
 }
 
 sub draw {
@@ -511,31 +574,16 @@ sub draw {
     $self->_prepare_draw;
 
     my $cols  = $self->{cols};
-    my $fcols = $self->{_dd}{fcols};
-    my $frows = $self->{_dd}{frows};
-    my $fcol_lpads  = $self->{_dd}{fcol_lpads};
-    my $fcol_rpads  = $self->{_dd}{fcol_rpads};
-    my $frow_tpads  = $self->{_dd}{frow_tpads};
-    my $frow_bpads  = $self->{_dd}{frow_bpads};
-    my $fcol_widths = $self->{_dd}{fcol_widths};
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+    my $fcol_lpads  = $self->{_draw}{fcol_lpads};
+    my $fcol_rpads  = $self->{_draw}{fcol_rpads};
+    my $frow_tpads  = $self->{_draw}{frow_tpads};
+    my $frow_bpads  = $self->{_draw}{frow_bpads};
+    my $fcol_widths = $self->{_draw}{fcol_widths};
 
     my $bs  = $self->{border_style};
     my $bch = $bs->{chars};
-
-    my $bb = $bs->{box_chars} ? "\e(0" : "";
-    my $ab = $bs->{box_chars} ? "\e(B" : "";
-
-    my $colors = $self->{color_theme}{colors};
-
-    my @s; # the result string
-
-    my $draw_bch = sub {
-        push @s, $colors->{border} // "", $bb;
-        while (my ($y, $x, $n) = splice @_, 0, 3) {
-            push @s, $bch->[$y][$x] x ($n // 1);
-        }
-        push @s, $ab, $colors->{reset};
-    };
 
     # draw border top line
     {
@@ -548,26 +596,24 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 0, $i==@$fcols-1 ? 3:2, 1;
         }
-        $draw_bch->(@b);
-        push @s, "\n";
+        $self->draw_bch(@b);
+        $self->draw_str("\n");
     }
 
     # draw header
     if ($self->{show_header}) {
-        $draw_bch->(1, 0);
+        $self->draw_bch(1, 0);
 
         for my $i (0..@$fcols-1) {
             my $ci = $self->_colidx($fcols->[$i]);
-            push @s, " " x $fcol_lpads->[$ci];
             my $cell = ta_mbpad(
                 $fcols->[$i], $fcol_widths->[$ci], "r", " ", 1);
-            # XXX give cell fgcolor/bgcolor ...
-            push @s, $cell;
-            push @s, " " x $fcol_rpads->[$ci];
-
-            $draw_bch->(1, $i == @$fcols-1 ? 2:1);
+            # XXX give fgcolor/bgcolor, align
+            $self->draw_str(
+                " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
+            $self->draw_bch(1, $i == @$fcols-1 ? 2:1);
         }
-        push @s, "\n";
+        $self->draw_str("\n");
     }
 
     # draw header-data row separator
@@ -580,26 +626,24 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 2, $i==@$fcols-1 ? 3:2, 1;
         }
-        $draw_bch->(@b);
-        push @s, "\n";
+        $self->draw_bch(@b);
+        $self->draw_str("\n");
     }
 
     # draw data rows
     {
         for my $r (0..@$frows-1) {
-            $draw_bch->(3, 0);
+            $self->draw_bch(3, 0);
             for my $i (0..@$fcols-1) {
                 my $ci = $self->_colidx($fcols->[$i]);
-                push @s, " " x $fcol_lpads->[$ci];
                 my $cell = ta_mbpad(
                     $frows->[$r][$i], $fcol_widths->[$ci], "r", " ", 1);
                 # XXX give cell fgcolor/bgcolor ...
-                push @s, $cell;
-                push @s, " " x $fcol_rpads->[$ci];
-
-                $draw_bch->(3, $i == @$fcols-1 ? 2:1);
+                $self->draw_str(
+                    " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
+                $self->draw_bch(3, $i == @$fcols-1 ? 2:1);
             }
-            push @s, "\n";
+            $self->draw_str("\n");
         }
     }
 
@@ -616,17 +660,17 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 5, $i==@$fcols-1 ? 3:2, 1;
         }
-        $draw_bch->(@b);
-        push @s, "\n";
+        $self->draw_bch(@b);
+        $self->draw_str("\n");
     }
 
-    join "", @s;
+    join "", @{$self->{_draw}{buf}};
 }
 
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD)$
+=for Pod::Coverage ^(BUILD|draw_.+)$
 
 =head1 SYNOPSIS
 
@@ -762,10 +806,13 @@ also the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
-modules for example, like L<Text::ANSITable::ColorTheme::Default>. Each color
-specified in the specification must be ANSI escape codes (e.g. "\e[31;1m" for
-bold red, or "\e[38;5;226m" for lemon yellow.
-
+modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
+items must be specified as ANSI escape codes (e.g. "\e[31;1m" for bold red, or
+"\e[38;5;226m" for lemon yellow). For flexibility, color can also be a coderef
+which should produce ANSI escape code. This allows you to do, e.g. gradation
+border color, random color, etc. Code will be called with ($self, %args) where
+%args contains various information, like C<name> (the item name being
+requested). You can get the row position from C<< $self->{_draw}{y} >>.
 
 =head1 COLUMN WIDTHS
 
