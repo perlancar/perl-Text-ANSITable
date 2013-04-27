@@ -620,7 +620,6 @@ sub draw {
         push @s, "\n";
     }
 
-
     join "", @s;
 }
 

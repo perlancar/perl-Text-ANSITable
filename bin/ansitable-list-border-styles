@@ -26,7 +26,7 @@ for my $name (sort keys %$all_bs) {
 }
 
 say "Tip: you can run me with border style name as argument to try it out.";
-say $t->draw;
+print $t->draw;
 
 #ABSTRACT: Display a list of known border styles
 #PODNAME: ansitable-list-border-styles
