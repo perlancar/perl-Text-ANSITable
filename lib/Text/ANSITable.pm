@@ -1305,7 +1305,12 @@ Choose border styles like C<space> or C<none>:
 
 =head3 How to disable colors?
 
-Set C<use_color> attribute to 0. Or set environment C<COLOR> to 0.
+Set C<use_color> attribute or C<COLOR> environment to 0.
+
+=head3 I'm not seeing colors when output is piped (e.g. to a pager)!
+
+The default is to disable colors when (-t STDOUT) is false. You can force-enable
+colors by setting C<use_color> attribute or C<COLOR> environment to 1.
 
 =head3 How to enable 256 colors? I'm seeing only 16 colors.
 
