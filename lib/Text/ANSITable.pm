@@ -129,7 +129,9 @@ sub BUILD {
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
-        if ($self->{use_utf8}) {
+        if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
+            $bs = $ENV{ANSITABLE_BORDER_STYLE};
+        } elsif ($self->{use_utf8}) {
             $bs = 'bricko';
         } elsif ($self->{use_box_chars}) {
             $bs = 'single_boxchar';
@@ -142,7 +144,9 @@ sub BUILD {
     # pick a default color theme
     unless ($self->{color_theme}) {
         my $ct;
-        if ($self->{use_color}) {
+        if (defined $ENV{ANSITABLE_COLOR_THEME}) {
+            $ct = $ENV{ANSITABLE_COLOR_THEME};
+        } elsif ($self->{use_color}) {
             if ($self->{color_depth} >= 256) {
                 $ct = 'default_256';
             } else {
