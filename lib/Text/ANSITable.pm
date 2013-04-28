@@ -566,32 +566,59 @@ sub draw_str {
 
 # pick color from color theme. args is a hashref to be supplied to color coderef
 # if the color from the theme is a coderef.
-sub draw_color {
+sub get_color {
     my ($self, $name, $args) = @_;
 
-    return if $self->{color_theme}{no_color};
+    return "" if $self->{color_theme}{no_color};
     my $c = $self->{color_theme}{colors}{$name};
-    return unless defined($c) && length($c);
+    return "" unless defined($c) && length($c);
 
     if (ref($c) eq 'CODE') {
         $c = $c->($self, name=>$name, %$args);
     }
     unless (index("\e[", $c) >= 0) {
         if ($self->{color_depth} >= 2**24) {
-            $c = $name =~ /_bg$/ ? ansi24bbg($c) : ansi24bfg($c);
+            if (ref($c) eq 'ARRAY') {
+                $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
+                    (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
+            } else {
+                $c = $name =~ /_bg$/ ? ansi24bbg($c) : ansi24bfg($c);
+            }
         } elsif ($self->{color_depth} >= 256) {
-            $c = $name =~ /_bg$/ ? ansi256bg($c) : ansi256fg($c);
+            if (ref($c) eq 'ARRAY') {
+                $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
+                    (defined($c->[1]) ? ansi256bg($c->[1]) : "");
+            } else {
+                $c = $name =~ /_bg$/ ? ansi256bg($c) : ansi256fg($c);
+            }
         } else {
-            $c = $name =~ /_bg$/ ? ansi16bg($c) : ansi16fg($c);
+            if (ref($c) eq 'ARRAY') {
+                $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
+                    (defined($c->[1]) ? ansi16bg($c->[1]) : "");
+            } else {
+                $c = $name =~ /_bg$/ ? ansi16bg($c) : ansi16fg($c);
+            }
         }
     }
-    $self->draw_str($c);
+    $c;
+}
+
+sub draw_color {
+    my $self = shift;
+    my $c = $self->get_color(@_);
+    $self->draw_str($c) if length($c);
+}
+
+sub get_color_reset {
+    my $self = shift;
+    return "" if $self->{color_theme}{no_color};
+    "\e[0m";
 }
 
 sub draw_color_reset {
     my $self = shift;
-    return if $self->{color_theme}{no_color};
-    $self->draw_str("\e[0m");
+    my $c = $self->get_color_reset;
+    $self->draw_str($c) if length($c);
 }
 
 # draw border character(s). drawing border character involves setting border
@@ -719,7 +746,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color)$
 
 =head1 SYNOPSIS
 
@@ -871,12 +898,14 @@ C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
 items must be specified as 6-hexdigit RGB value (like C<ff0088>) or ANSI escape
 codes (e.g. "\e[31;1m" for bold red foregound color, or "\e[48;5;226m" for lemon
-yellow background color). For flexibility, color can also be a coderef which
-should produce a color value. This allows you to do, e.g. gradation border
-color, random color, etc (see L<Text::ANSITable::ColorTheme::Demo>). Code will
-be called with ($self, %args) where %args contains various information, like
-C<name> (the item name being requested). You can get the row position from C<<
-$self->{_draw}{y} >>.
+yellow background color). You can also return a 2-element array containing RGB
+value for foreground and background, respectively.
+
+For flexibility, color can also be a coderef which should produce a color value.
+This allows you to do, e.g. gradation border color, random color, etc (see
+L<Text::ANSITable::ColorTheme::Demo>). Code will be called with ($self, %args)
+where %args contains various information, like C<name> (the item name being
+requested). You can get the row position from C<< $self->{_draw}{y} >>.
 
 
 =head1 COLUMN WIDTHS
