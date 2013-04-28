@@ -1265,24 +1265,17 @@ Can be used to set default value for C<border_style> attribute.
 
 =head1 FAQ
 
-=head2 I'm getting 'Wide character in print' error message when I use utf8 border styles!
+=head2 General
 
-Add something like this first before printing to your output:
+=head3 My table looks garbled when viewed through pager like B<less>!
 
- binmode(STDOUT, ":utf8");
+It's because B<less> escapes ANSI color codes. Try using C<-R> option of B<less>
+to display ANSI color codes raw.
 
-=head2 My table looks garbled when viewed through pager like B<less>!
+Or, try not using boxchar border styles, use the utf8 or ascii version. Try not
+using colors.
 
-Try using C<-R> option of B<less> to see ANSI color codes. Try not using boxchar
-border styles, use the utf8 or ascii version.
-
-=head2 How to hide borders?
-
-Choose border styles like C<space> or C<none>:
-
- $t->border_style("none");
-
-=head2 How do I format data?
+=head3 How do I format data?
 
 Use the C<formats> per-column style or per-cell style. For example:
 
@@ -1293,6 +1286,36 @@ Use the C<formats> per-column style or per-cell style. For example:
 
 See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
 available formatting functions.
+
+=head2 Border
+
+=head3 I'm getting 'Wide character in print' error message when I use utf8 border styles!
+
+Add something like this first before printing to your output:
+
+ binmode(STDOUT, ":utf8");
+
+=head3 How to hide borders?
+
+Choose border styles like C<space> or C<none>:
+
+ $t->border_style("none");
+
+=head2 Color
+
+=head3 How to disable colors?
+
+Set C<use_color> attribute to 0. Or set environment C<COLOR> to 0.
+
+=head3 How to enable 256 colors? I'm seeing only 16 colors.
+
+Set your C<TERM> to C<xterm-256color>. Also make sure your terminal emulator
+supports 256 colors.
+
+=head3 How to enable 24bit colors (true color)?
+
+Currently only B<Konsole> and the Konsole-based B<Yakuake> terminal emulator
+software support 24bit colors.
 
 
 =head1 TODO
