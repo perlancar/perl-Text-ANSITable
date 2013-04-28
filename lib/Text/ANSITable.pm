@@ -984,7 +984,7 @@ Example:
  $t->column_style('colname', fgcolor => 'fa8888');
  $t->column_style('colname', bgcolor => '202020');
 
-=item Per-row color using C<row_style()> method
+=item * Per-row color using C<row_style()> method
 
 Example:
 
@@ -996,7 +996,7 @@ When adding row/rows:
  $t->add_row($row, {fgcolor=>..., bgcolor=>...});
  $t->add_rows($rows, {bgcolor=>...});
 
-=item Per-cell color using C<cell_style()> method
+=item * Per-cell color using C<cell_style()> method
 
 Example:
 
