@@ -63,7 +63,7 @@ has _row_separators => ( # [index after which sep should be drawn, ...] sorted
 );
 has show_row_separator => (
     is      => 'rw',
-    default => sub { 0 },
+    default => sub { 2 },
 );
 has show_header => (
     is      => 'rw',
@@ -470,6 +470,7 @@ sub _prepare_draw {
         }
     }
     $self->{_draw}{fcols}      = $fcols;
+    $self->{_draw}{frow_separators} = $frow_separators;
     $self->{_draw}{frow_tpads} = $frow_tpads;
     $self->{_draw}{frow_bpads} = $frow_bpads;
 
@@ -656,11 +657,13 @@ sub draw {
     my $cols  = $self->{cols};
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
-    my $fcol_lpads  = $self->{_draw}{fcol_lpads};
-    my $fcol_rpads  = $self->{_draw}{fcol_rpads};
-    my $frow_tpads  = $self->{_draw}{frow_tpads};
-    my $frow_bpads  = $self->{_draw}{frow_bpads};
-    my $fcol_widths = $self->{_draw}{fcol_widths};
+    my $frow_sep        = $self->{_draw}{frow_separators};
+    my $frow_heights    = $self->{_draw}{frow_heights};
+    my $frow_tpads      = $self->{_draw}{frow_tpads};
+    my $frow_bpads      = $self->{_draw}{frow_bpads};
+    my $fcol_lpads      = $self->{_draw}{fcol_lpads};
+    my $fcol_rpads      = $self->{_draw}{fcol_rpads};
+    my $fcol_widths     = $self->{_draw}{fcol_widths};
 
     my $bs  = $self->{border_style};
     my $bch = $bs->{chars};
@@ -687,7 +690,7 @@ sub draw {
         for my $i (0..@$fcols-1) {
             my $ci = $self->_colidx($fcols->[$i]);
             my $cell = ta_mbpad(
-                $fcols->[$i], $fcol_widths->[$ci], "r", " ", 1);
+                $fcols->[$i] // "", $fcol_widths->[$ci], "r", " ", 1);
             # XXX give fgcolor/bgcolor, align
             $self->draw_str(
                 " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
@@ -717,14 +720,31 @@ sub draw {
             for my $i (0..@$fcols-1) {
                 my $ci = $self->_colidx($fcols->[$i]);
                 my $cell = ta_mbpad(
-                    $frows->[$r][$i], $fcol_widths->[$ci], "r", " ", 1);
+                    $frows->[$r][$i] // "", $fcol_widths->[$ci], "r", " ", 1);
                 # XXX give cell fgcolor/bgcolor ...
                 $self->draw_str(
                     " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
                 $self->draw_bch({row_idx=>$r}, 3, $i == @$fcols-1 ? 2:1);
             }
             $self->draw_str("\n");
-        }
+
+            # draw separators between row
+            if ($r < @$frows-1 &&
+                    (($self->{show_row_separator}==2 && $r ~~ $frow_sep)
+                         || $self->{show_row_separator}==1)) {
+                my @b;
+                push @b, 4, 0, 1;
+                for my $i (0..@$fcols-1) {
+                    my $ci = $self->_colidx($fcols->[$i]);
+                    push @b, 4, 1,
+                        $fcol_lpads->[$ci] + $fcol_widths->[$ci] +
+                            $fcol_rpads->[$ci];
+                    push @b, 4, $i==@$fcols-1 ? 3:2, 1;
+                }
+                $self->draw_bch({row_idx=>$r}, @b);
+                $self->draw_str("\n");
+            }
+        } # for frow
     }
 
     # XXX draw row separator
@@ -845,27 +865,26 @@ modules for example, like L<Text::ANSITable::BorderStyle::Default>. Format for
 the C<chars> specification key:
 
  [
-   [A, b, C, D],
-   [E, F, G],
-   [H, i, J, K],
-   [L, M, N],
-   [O, p, Q, R],
-   [S, t, U, V],
+   [A, b, C, D],  # 0
+   [E, F, G],     # 1
+   [H, i, J, K],  # 2
+   [L, M, N],     # 3
+   [O, p, Q, R],  # 4
+   [S, t, U, V],  # 5
  ]
 
- AbbbCbbbD        Top border characters
- E   F   G        Vertical separators for header row
- HiiiJiiiK        Separator between header row and first data row
- L   M   N        Vertical separators for data row
- OpppQpppR        Separator between data rows
- L   M   N
- StttUtttV        Bottom border characters
+ AbbbCbbbD        #0 Top border characters
+ E   F   G        #1 Vertical separators for header row
+ HiiiJiiiK        #2 Separator between header row and first data row
+ L   M   N        #3 Vertical separators for data row
+ OpppQpppR        #4 Separator between data rows
+ L   M   N        #3
+ StttUtttV        #5 Bottom border characters
 
 Each character must have visual width of 1. But if A is an empty string, the top
 border line will not be drawn. Likewise: if H is an empty string, the
-header-data separator line will not be drawn; if O is an empty string, data
-separator lines will not be drawn; if S is an empty string, bottom border line
-will not be drawn.
+header-data separator line will not be drawn; if S is an empty string, bottom
+border line will not be drawn.
 
 
 =head1 COLOR THEMES
@@ -1164,9 +1183,12 @@ Some color themes can accept arguments. You can set it here.
 
 When drawing, whether to show header.
 
-=head2 show_row_separator => BOOL (default: 0)
+=head2 show_row_separator => INT (default: 2)
 
-When drawing, whether to show separator between rows.
+When drawing, whether to show separator lines between rows. The default (2) is
+to only show separators drawn using C<add_row_separator()>. If you set this to
+1, lines will be drawn after every data row. If you set this attribute to 0, no
+lines will be drawn whatsoever.
 
 =head2 column_pad => INT
 
@@ -1330,9 +1352,33 @@ Add something like this first before printing to your output:
 
 =head3 How to hide borders?
 
-Choose border styles like C<space> or C<none>:
+Choose border styles like C<space_ascii> or C<none_utf8>:
 
  $t->border_style("none");
+
+=head2 I want to hide borders, and I do not want row separators to be shown!
+
+The default is for separator lines to be drawn if drawn using
+C<add_row_separator()>, e.g.:
+
+ $t->add_row(['row1']);
+ $t->add_row(['row2']);
+ $t->add_row_separator;
+ $t->add_row(['row3']);
+
+The result will be:
+
+   row1
+   row2
+ --------
+   row3
+
+However, if you set C<show_row_separator> to 0, no separator lines will be drawn
+whatsoever:
+
+   row1
+   row2
+   row3
 
 =head2 Color
 
@@ -1359,6 +1405,10 @@ software support 24bit colors.
 =head1 TODO
 
 Attributes: header_{pad,vpad,lpad,rpad,tpad,bpad,align,valign,wrap}
+
+Column styles: show_{left,right}_border (shorter name? {l,r}border?)
+
+Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
 
 
 =head1 SEE ALSO

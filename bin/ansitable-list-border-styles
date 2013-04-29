@@ -19,14 +19,21 @@ if ($ARGV[0]) {
 my $all_bs = $t->list_border_styles(1);
 
 $t->columns(['Name', 'Module', 'Summary', 'box_chars?', 'utf8?']);
-for my $name (sort keys %$all_bs) {
+my $utf8; # we sort by not utf8 and then utf8, just to demonstrate add_row_separator
+for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) || $a cmp $b} keys %$all_bs) {
     my $bs = $all_bs->{$name};
     $t->add_row(
         [$name, $bs->{module}, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0]);
+    if (!$utf8 && $bs->{utf8}) {
+        $t->add_row_separator;
+        $utf8++;
+    }
 }
 
 say "Tip: you can run me with border style name as argument to try it out.";
 print $t->draw;
+
+#use Data::Dump; dd $t->{_row_separators}; dd $t->{_draw}{frow_separators};
 
 #ABSTRACT: Display a list of known border styles
 #PODNAME: ansitable-list-border-styles
