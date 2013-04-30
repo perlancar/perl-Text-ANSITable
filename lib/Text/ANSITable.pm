@@ -494,7 +494,7 @@ sub _prepare_draw {
                 die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
                     unless $res->[0] == 200;
                 $res = $res->[2];
-                for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] }
+                for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
             }
             $fcol_lpads->[$i] = $self->column_style($i, 'lpad') //
                 $self->column_style($i, 'pad') // $lpad;
@@ -506,7 +506,8 @@ sub _prepare_draw {
     $self->{_draw}{fcol_rpads}  = $fcol_rpads;
 
     # apply cell formats, calculate widths/heights of data rows
-    my $frow_heights = []; # index = [frowidx]
+    my $frow_heights  = []; # index = [frowidx]
+    my $fcell_heights = []; # index = [frowidx][colnum]
     {
         my $cswidths = [map {$self->column_style($_, 'width')} 0..@$cols-1];
         my $val;
@@ -531,7 +532,8 @@ sub _prepare_draw {
                 }
 
                 # calculate heights/widths of data
-                my $wh = ta_mbswidth_height($frows->[$i][$j] // "");
+                my $wh = ta_mbswidth_height($frows->[$i][$j]);
+                $fcell_heights->[$i][$j] = $wh->[1];
                 $frow_heights->[$i] = $wh->[1]
                     if !defined($frow_heights->[$i]) ||
                         $frow_heights->[$i] < $wh->[1];
@@ -659,6 +661,7 @@ sub draw {
     my $frows = $self->{_draw}{frows};
     my $frow_sep        = $self->{_draw}{frow_separators};
     my $frow_heights    = $self->{_draw}{frow_heights};
+    my $cell_heights    = $self->{_draw}{fcell_heights};
     my $frow_tpads      = $self->{_draw}{frow_tpads};
     my $frow_bpads      = $self->{_draw}{frow_bpads};
     my $fcol_lpads      = $self->{_draw}{fcol_lpads};
@@ -689,8 +692,7 @@ sub draw {
 
         for my $i (0..@$fcols-1) {
             my $ci = $self->_colidx($fcols->[$i]);
-            my $cell = ta_mbpad(
-                $fcols->[$i] // "", $fcol_widths->[$ci], "r", " ", 1);
+            my $cell = ta_mbpad($fcols->[$i], $fcol_widths->[$ci], "r", " ", 1);
             # XXX give fgcolor/bgcolor, align
             $self->draw_str(
                 " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
@@ -719,8 +721,8 @@ sub draw {
             $self->draw_bch({row_idx=>$r}, 3, 0);
             for my $i (0..@$fcols-1) {
                 my $ci = $self->_colidx($fcols->[$i]);
-                my $cell = ta_mbpad(
-                    $frows->[$r][$i] // "", $fcol_widths->[$ci], "r", " ", 1);
+                my $cell = ta_mbpad($frows->[$r][$i],
+                                    $fcol_widths->[$ci], "r", " ", 1);
                 # XXX give cell fgcolor/bgcolor ...
                 $self->draw_str(
                     " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
