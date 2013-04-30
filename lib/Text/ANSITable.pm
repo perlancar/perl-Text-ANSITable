@@ -117,11 +117,10 @@ has color_theme_args => (
     is      => 'rw',
     default => sub { {} },
 );
-# not yet
-#has border_style_args => (
-#    is      => 'rw',
-#    default => sub { {} },
-#);
+has border_style_args => (
+    is      => 'rw',
+    default => sub { {} },
+);
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -571,6 +570,19 @@ sub draw_str {
     $self;
 }
 
+# pick border character from border style. args is a hashref to be supplied to
+# the coderef if the 'chars' value from the style is a coderef.
+sub get_bch {
+    my ($self, $y, $x, $n, $args) = @_;
+    my $bch = $self->{border_style}{chars};
+    $n //= 1;
+    if (ref($bch) eq 'CODE') {
+        $bch->($self, y=>$y, x=>$x, n=>$n, %{$args // {}});
+    } else {
+        $bch->[$y][$x] x $n;
+    }
+}
+
 # pick color from color theme. args is a hashref to be supplied to color coderef
 # if the color from the theme is a coderef.
 sub get_color {
@@ -645,7 +657,7 @@ sub draw_bch {
         } else {
             $self->draw_color('border', {bch=>[$y, $x, $n]});
         }
-        $self->draw_str($self->{border_style}{chars}[$y][$x] x $n);
+        $self->draw_str($self->get_bch($y, $x, $n));
         $self->draw_color_reset;
     }
     $self->draw_str($self->{_draw}{reset_line_draw_mode});
@@ -668,12 +680,9 @@ sub draw {
     my $fcol_rpads      = $self->{_draw}{fcol_rpads};
     my $fcol_widths     = $self->{_draw}{fcol_widths};
 
-    my $bs  = $self->{border_style};
-    my $bch = $bs->{chars};
-
     # draw border top line
     {
-        last unless length($bch->[0][0]);
+        last unless length($self->get_bch(0, 0));
         my @b;
         push @b, 0, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -702,7 +711,7 @@ sub draw {
     }
 
     # draw header-data row separator
-    if ($self->{show_header} && length($bch->[2][0])) {
+    if ($self->{show_header} && length($self->get_bch(2, 0))) {
         my @b;
         push @b, 2, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -753,7 +762,7 @@ sub draw {
 
     # draw border bottom line
     {
-        last unless length($bch->[5][0]);
+        last unless length($self->get_bch(5, 0));
         my @b;
         push @b, 5, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -772,7 +781,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|get_color)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color|get_bch)$
 
 =head1 SYNOPSIS
 
