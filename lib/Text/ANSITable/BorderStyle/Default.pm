@@ -328,12 +328,12 @@ our %border_styles = (
     },
 
 
-    #vbold => {
+    #boldv => {
     #    summary => 'Vertically-bold',
     #},
 
 
-    #hbold => {
+    #boldh => {
     #    summary => 'Horizontally-bold',
     #},
 
