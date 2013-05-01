@@ -8,7 +8,7 @@ use Moo;
 
 #use List::Util 'first';
 use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad);
+use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 use Color::ANSI::Util qw(ansi16fg ansi16bg
                          ansi256fg ansi256bg
                          ansi24bfg ansi24bbg
@@ -111,7 +111,8 @@ has column_align => (
     is => 'rw',
 );
 has row_valign => (
-    is => 'rw',
+    is      => 'rw',
+    default => sub { 'top' },
 );
 has color_theme_args => (
     is      => 'rw',
@@ -120,6 +121,27 @@ has color_theme_args => (
 has border_style_args => (
     is      => 'rw',
     default => sub { {} },
+);
+has header_align => (
+    is      => 'rw',
+);
+has header_valign => (
+    is      => 'rw',
+);
+has header_vpad => (
+    is      => 'rw',
+);
+has header_tpad => (
+    is      => 'rw',
+);
+has header_bpad => (
+    is      => 'rw',
+);
+has header_fgcolor => (
+    is      => 'rw',
+);
+has header_bgcolor => (
+    is      => 'rw',
 );
 
 sub BUILD {
@@ -445,7 +467,7 @@ sub _prepare_draw {
     my $frow_bpads  = []; # ditto
     my $frows = [];
     my $frow_separators = [];
-    my $frow_orig_index = []; # needed when accessing original row data
+    my $frow_orig_indices = []; # needed when accessing original row data
     {
         my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl top padding
         my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl botom pad
@@ -465,13 +487,22 @@ sub _prepare_draw {
                 $self->row_style($i, 'vpad') // $tpad;
             push @$frow_bpads, $self->row_style($i, 'bpad') //
                 $self->row_style($i, 'vpad') // $bpad;
-            push @$frow_orig_index, $i;
+            push @$frow_orig_indices, $i;
         }
     }
-    $self->{_draw}{fcols}      = $fcols;
-    $self->{_draw}{frow_separators} = $frow_separators;
-    $self->{_draw}{frow_tpads} = $frow_tpads;
-    $self->{_draw}{frow_bpads} = $frow_bpads;
+    $self->{_draw}{fcols}             = $fcols;
+    $self->{_draw}{frow_separators}   = $frow_separators;
+    $self->{_draw}{frow_tpads}        = $frow_tpads;
+    $self->{_draw}{frow_bpads}        = $frow_bpads;
+    $self->{_draw}{frow_orig_indices} = $frow_orig_indices;
+
+    # XXX detect column type from data/header name. assign default column align,
+    # valign, fgcolor, bgcolor, formats.
+    my $fcol_detect = [];
+    #{
+    #    # ...
+    #}
+    $self->{_draw}{fcol_detect} = $fcol_detect;
 
     # apply column formats, calculate pads of columns
     my $fcol_lpads  = []; # index = [colnum]
@@ -483,7 +514,8 @@ sub _prepare_draw {
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            my $fmts = $self->column_style($i, 'formats');
+            my $fmts = $self->column_style($i, 'formats') //
+                $fcol_detect->[$i]{formats};
             if (defined $fmts) {
                 require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
@@ -506,14 +538,16 @@ sub _prepare_draw {
 
     # apply cell formats, calculate widths/heights of data rows
     my $frow_heights  = []; # index = [frowidx]
-    my $fcell_heights = []; # index = [frowidx][colnum]
+    #my $fcell_heights = []; # index = [frowidx][colnum]
     {
         my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl tpad
         my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl bpad
-        my $cswidths = [map {$self->column_style($_, 'width')} 0..@$cols-1];
+        my $cswidths  = [map {$self->column_style($_, 'width')} 0..@$cols-1];
         my $val;
         for my $i (0..@$frows-1) {
             my %seen;
+            my $origi = $frow_orig_indices->[$i];
+            my $rsheight = $self->row_style($origi, 'height');
             for my $j (0..@$cols-1) {
                 next unless $cols->[$j] ~~ $fcols;
                 next if $seen{$cols->[$j]}++;
@@ -522,7 +556,6 @@ sub _prepare_draw {
                 my $fmts = $self->cell_style($i, $j, 'formats');
                 if (defined $fmts) {
                     require Data::Unixish::Apply;
-                    my $origi = $frow_orig_index->[$j];
                     my $res = Data::Unixish::Apply::apply(
                         in => [ $rows->[$origi][$j] ],
                         functions => $fmts,
@@ -534,10 +567,20 @@ sub _prepare_draw {
 
                 # calculate heights/widths of data
                 my $wh = ta_mbswidth_height($frows->[$i][$j]);
-                $fcell_heights->[$i][$j] = $wh->[1];
-                $frow_heights->[$i] = $wh->[1]
-                    if !defined($frow_heights->[$i]) ||
-                        $frow_heights->[$i] < $wh->[1];
+                #$fcell_heights->[$i][$j] = $wh->[1];
+
+                $val = $wh->[1];
+                if (defined $rsheight) {
+                    if ($rsheight < 0) {
+                        # widen to minimum height
+                        $val = -$rsheight if $val < -$rsheight;
+                    } else {
+                        $val =  $rsheight if $val <  $rsheight;
+                    }
+                }
+                $frow_heights->[$i] = $val if !defined($frow_heights->[$i]) ||
+                    $frow_heights->[$i] < $val;
+
                 $val = $wh->[0];
                 if (defined $cswidths->[$j]) {
                     if ($cswidths->[$j] < 0) {
@@ -548,18 +591,20 @@ sub _prepare_draw {
                     }
                 }
                 $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
+
             } # col
         }
     }
-    $self->{_draw}{frow_heights} = $frow_heights;
-    $self->{_draw}{fcol_widths}  = $fcol_widths;
-    $self->{_draw}{frows}        = $frows;
+    $self->{_draw}{frow_heights}  = $frow_heights;
+    #$self->{_draw}{fcell_heights} = $fcell_heights;
+    $self->{_draw}{fcol_widths}   = $fcol_widths;
+    $self->{_draw}{frows}         = $frows;
 
     # calculate table width and height
     {
         my $w = 0;
-        $w += 1 if length($self->get_bch(3, 0));
-        my $has_vsep = length($self->get_bch(3, 1));
+        $w += 1 if length($self->get_border_char(3, 0));
+        my $has_vsep = length($self->get_border_char(3, 1));
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
@@ -567,18 +612,22 @@ sub _prepare_draw {
                 $w += 1 if $has_vsep;
             }
         }
-        $w += 1 if length($self->get_bch(3, 2));
+        $w += 1 if length($self->get_border_char(3, 2));
         $self->{_draw}{table_width}  = $w;
 
         my $h = 0;
-        $h += 1 if length($self->get_bch(0, 0));
+        $h += 1 if length($self->get_border_char(0, 0)); # top border line
+        $h += $self->{header_tpad} // $self->{header_vpad} //
+                   $self->{row_tpad} // $self->{row_vpad};
         $h += $header_height;
-        $h += 1 if length($self->get_bch(2, 0));
+        $h += $self->{header_bpad} // $self->{header_vpad} //
+                   $self->{row_bpad} // $self->{row_vpad};
+        $h += 1 if length($self->get_border_char(2, 0));
         for my $i (0..@$frows-1) {
             $h += $frow_tpads->[$i] + $frow_heights->[$i] + $frow_bpads->[$i];
             $h += 1 if $self->_should_draw_row_separator($i);
         }
-        $h += 1 if length($self->get_bch(5, 0));
+        $h += 1 if length($self->get_border_char(5, 0));
         $self->{_draw}{table_height}  = $h;
     }
 }
@@ -601,7 +650,7 @@ sub draw_str {
 
 # pick border character from border style. args is a hashref to be supplied to
 # the coderef if the 'chars' value from the style is a coderef.
-sub get_bch {
+sub get_border_char {
     my ($self, $y, $x, $n, $args) = @_;
     my $bch = $self->{border_style}{chars};
     $n //= 1;
@@ -612,48 +661,60 @@ sub get_bch {
     }
 }
 
-# pick color from color theme. args is a hashref to be supplied to color coderef
-# if the color from the theme is a coderef.
-sub get_color {
-    my ($self, $name, $args) = @_;
+# convert an RGB color (or a coderef that generates an RGB color) to ANSI escape
+# code. args is a hashref to be supplied to coderef as arguments.
+sub color2ansi {
+    my ($self, $c, $args, $is_bg) = @_;
 
-    return "" if $self->{color_theme}{no_color};
-    my $c = $self->{color_theme}{colors}{$name};
-    return "" unless defined($c) && length($c);
+    # already ansi, skip
+
+    $args //= {};
 
     if (ref($c) eq 'CODE') {
-        $c = $c->($self, name=>$name, %$args);
+        $c = $c->($self, %$args);
     }
-    unless (index("\e[", $c) >= 0) {
+
+    unless (index($c, "\e[") >= 0) {
         if ($self->{color_depth} >= 2**24) {
             if (ref($c) eq 'ARRAY') {
                 $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
                     (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
             } else {
-                $c = $name =~ /_bg$/ ? ansi24bbg($c) : ansi24bfg($c);
+                $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
             }
         } elsif ($self->{color_depth} >= 256) {
             if (ref($c) eq 'ARRAY') {
                 $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
                     (defined($c->[1]) ? ansi256bg($c->[1]) : "");
             } else {
-                $c = $name =~ /_bg$/ ? ansi256bg($c) : ansi256fg($c);
+                $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
             }
         } else {
             if (ref($c) eq 'ARRAY') {
                 $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
                     (defined($c->[1]) ? ansi16bg($c->[1]) : "");
             } else {
-                $c = $name =~ /_bg$/ ? ansi16bg($c) : ansi16fg($c);
+                $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
             }
         }
     }
     $c;
 }
 
-sub draw_color {
+# pick color from color theme
+sub get_theme_color {
+    my ($self, $name, $args) = @_;
+
+    return "" if $self->{color_theme}{no_color};
+    my $c = $self->{color_theme}{colors}{$name};
+    return "" unless defined($c) && length($c);
+
+    $self->color2ansi($c, {name=>$name, %{ $args // {} }}, $name =~ /_bg$/);
+}
+
+sub draw_theme_color {
     my $self = shift;
-    my $c = $self->get_color(@_);
+    my $c = $self->get_theme_color(@_);
     $self->draw_str($c) if length($c);
 }
 
@@ -674,7 +735,7 @@ sub draw_color_reset {
 # actual characters themselves. arguments are list of (y, x, n) tuples where y
 # and x are the row and col number of border character, n is the number of
 # characters to print. n defaults to 1 if not specified.
-sub draw_bch {
+sub draw_border_char {
     my $self = shift;
     my $args = shift if ref($_[0]) eq 'HASH';
 
@@ -682,11 +743,13 @@ sub draw_bch {
     while (my ($y, $x, $n) = splice @_, 0, 3) {
         $n //= 1;
         if ($args) {
-            $self->draw_color('border', {bch=>[$y, $x, $n], %$args});
+            $self->draw_theme_color('border',
+                                    {border=>[$y, $x, $n], %$args});
         } else {
-            $self->draw_color('border', {bch=>[$y, $x, $n]});
+            $self->draw_theme_color('border',
+                                    {border=>[$y, $x, $n]});
         }
-        $self->draw_str($self->get_bch($y, $x, $n));
+        $self->draw_str($self->get_border_char($y, $x, $n));
         $self->draw_color_reset;
     }
     $self->draw_str($self->{_draw}{reset_line_draw_mode});
@@ -700,6 +763,169 @@ sub _should_draw_row_separator {
              || $self->{show_row_separator}==1);
 }
 
+# apply align/valign, padding, and then default fgcolor/bgcolor to text
+sub _get_cell_lines {
+    my $self = shift;
+    #say "D: get_cell_lines ".join(", ", map{$_//""} @_);
+    my ($text, $width, $height, $align, $valign,
+        $lpad, $rpad, $tpad, $bpad, $color) = @_;
+
+    my @lines;
+    push @lines, "" for 1..$tpad;
+    my @dlines = split /\r?\n/, $text;
+    my ($la, $lb);
+    if ($valign =~ /^[Bb]/o) { # bottom
+        $la = $height-@dlines;
+        $lb = 0;
+    } elsif ($valign =~ /^[MmCc]/o) { # middle/center
+        $la = int(($height-@dlines)/2);
+        $lb = $height-@dlines-$la;
+    } else { # top
+        $la = 0;
+        $lb = $height-@dlines;
+    }
+    push @lines, "" for 1..$la;
+    push @lines, @dlines;
+    push @lines, "" for 1..$lb;
+    push @lines, "" for 1..$bpad;
+
+    my $pad = $align =~ /^[Ll]/o ? "right" :
+        ($align =~ /^[Rr]/o ? "left" : "center");
+
+    @lines = ta_add_color_resets(@lines);
+    for (@lines) {
+        $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
+        # add default color
+        s/\e\[0m(?=.)/\e[0m$color/g;
+        $_ = $color . $_;
+    }
+
+    \@lines;
+}
+
+sub _get_header_cell_lines {
+    my ($self, $i) = @_;
+
+    my $ct = $self->{color_theme};
+
+    my $fgcolor;
+    if (defined $self->{header_fgcolor}) {
+        $fgcolor = $self->color2ansi($self->{header_fgcolor});
+    } elsif (defined $self->{cell_fgcolor}) {
+        $fgcolor = $self->color2ansi($self->{cell_fgcolor});
+    } elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
+        $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
+    } elsif (defined $self->{ct}{colors}{header}) {
+        $fgcolor = $self->get_theme_color('header');
+    } elsif (defined $self->{ct}{colors}{cell}) {
+        $fgcolor = $self->get_theme_color('cell');
+    } else {
+        $fgcolor = "";
+    }
+
+    my $bgcolor;
+    if (defined $self->{header_bgcolor}) {
+        $bgcolor = $self->color2ansi($self->{header_bgcolor},
+                                     undef, 1);
+    } elsif (defined $self->{cell_bgcolor}) {
+        $bgcolor = $self->color2ansi($self->{cell_bgcolor},
+                                     undef, 1);
+    } elsif (defined $self->{_draw}{fcol_detect}[$i]{bgcolor}) {
+        $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
+                                     undef, 1);
+    } elsif (defined $self->{ct}{colors}{header_bg}) {
+        $bgcolor = $self->get_theme_color('header_bg');
+    } elsif (defined $self->{ct}{colors}{cell_bg}) {
+        $bgcolor = $self->get_theme_color('cell_bg');
+    } else {
+        $bgcolor = "";
+    }
+
+    my $align  = $self->{_draw}{fcol_detect}[$i]{align} //
+        $self->{header_align}  // $self->{column_align};
+    my $valign = $self->{_draw}{fcol_detect}[$i]{valign} //
+        $self->{header_valign} // $self->{row_valign};
+
+    my $lpad = $self->{_draw}{fcol_lpads}[$i];
+    my $rpad = $self->{_draw}{fcol_rpads}[$i];
+    my $tpad = $self->{header_tpad} // $self->{header_vpad} // 0;
+    my $bpad = $self->{header_bpad} // $self->{header_vpad} // 0;
+
+    $self->_get_cell_lines(
+        $self->{columns}[$i],            # text
+        $self->{_draw}{fcol_widths}[$i], # width
+        $self->{_draw}{header_height},   # height
+        $align, $valign,                 # aligns
+        $lpad, $rpad, $tpad, $bpad,      # paddings
+        $fgcolor . $bgcolor);
+}
+
+sub _get_data_cell_lines {
+    my ($self, $y, $x) = @_;
+
+    my $ct = $self->{color_theme};
+    my $oy = $self->{_draw}{frow_orig_indices}[$y];
+
+    my $tmp;
+    my $fgcolor;
+    if (defined ($tmp = $self->cell_style($oy, $x, 'fgcolor'))) {
+        $fgcolor = $self->color2ansi($tmp);
+    } elsif (defined ($tmp = $self->row_style($oy, 'fgcolor'))) {
+        $fgcolor = $self->color2ansi($tmp);
+    } elsif (defined ($tmp = $self->column_style($x, 'fgcolor'))) {
+        $fgcolor = $self->color2ansi($tmp);
+    } elsif (defined ($tmp = $self->{cell_fgcolor})) {
+        $fgcolor = $self->color2ansi($tmp);
+    } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
+        $fgcolor = $self->color2ansi($tmp);
+    } elsif (defined $self->{ct}{colors}{cell}) {
+        $fgcolor = $self->get_theme_color('cell');
+    } else {
+        $fgcolor = "";
+    }
+
+    my $bgcolor;
+    if (defined ($tmp = $self->cell_style($oy, $x, 'bgcolor'))) {
+        $bgcolor = $self->color2ansi($tmp,
+                                     undef, 1);
+    } elsif (defined ($tmp = $self->row_style($oy, 'bgcolor'))) {
+        $bgcolor = $self->color2ansi($tmp,
+                                     undef, 1);
+    } elsif (defined ($tmp = $self->column_style($x, 'bgcolor'))) {
+        $bgcolor = $self->color2ansi($tmp,
+                                     undef, 1);
+    } elsif (defined ($tmp = $self->{cell_bgcolor})) {
+        $bgcolor = $self->color2ansi($tmp,
+                                     undef, 1);
+    } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
+        $bgcolor = $self->color2ansi($tmp,
+                                     undef, 1);
+    } elsif (defined $self->{ct}{colors}{cell_bg}) {
+        $bgcolor = $self->get_theme_color('cell_bg');
+    } else {
+        $bgcolor = "";
+    }
+
+    my $align  = $self->{_draw}{fcol_detect}[$x]{align} //
+        $self->column_style($x, 'align') // $self->{column_align};
+    my $valign = $self->{_draw}{fcol_detect}[$x]{valign} //
+        $self->column_style($x, 'valign') // $self->{row_valign};
+
+    my $lpad = $self->{_draw}{fcol_lpads}[$x];
+    my $rpad = $self->{_draw}{fcol_rpads}[$x];
+    my $tpad = $self->{_draw}{frow_tpads}[$y];
+    my $bpad = $self->{_draw}{frow_bpads}[$y];
+
+    #say "D:oy=$oy, y=$y, x=$x, fgcolor=$fgcolor, bgcolor=$bgcolor";
+    $self->_get_cell_lines(
+        $self->{_draw}{frows}[$y][$x],    # text
+        $self->{_draw}{fcol_widths}[$x],  # width
+        $self->{_draw}{frow_heights}[$y], # height
+        $align, $valign,                  # aligns
+        $lpad, $rpad, $tpad, $bpad,       # paddings
+        $fgcolor . $bgcolor);
+}
+
 sub draw {
     my ($self) = @_;
 
@@ -709,7 +935,7 @@ sub draw {
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
     my $frow_heights    = $self->{_draw}{frow_heights};
-    my $cell_heights    = $self->{_draw}{fcell_heights};
+    #my $cell_heights    = $self->{_draw}{fcell_heights};
     my $frow_tpads      = $self->{_draw}{frow_tpads};
     my $frow_bpads      = $self->{_draw}{frow_bpads};
     my $fcol_lpads      = $self->{_draw}{fcol_lpads};
@@ -718,7 +944,7 @@ sub draw {
 
     # draw border top line
     {
-        last unless length($self->get_bch(0, 0));
+        last unless length($self->get_border_char(0, 0));
         my @b;
         push @b, 0, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -727,27 +953,37 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 0, $i==@$fcols-1 ? 3:2, 1;
         }
-        $self->draw_bch(@b);
+        $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
 
     # draw header
     if ($self->{show_header}) {
-        $self->draw_bch(1, 0);
-
+        my %seen;
+        my $hcell_lines = []; # index = [fcolnum]
         for my $i (0..@$fcols-1) {
             my $ci = $self->_colidx($fcols->[$i]);
-            my $cell = ta_mbpad($fcols->[$i], $fcol_widths->[$ci], "r", " ", 1);
-            # XXX give fgcolor/bgcolor, align
-            $self->draw_str(
-                " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
-            $self->draw_bch(1, $i == @$fcols-1 ? 2:1);
+            if (defined($seen{$i})) {
+                $hcell_lines->[$i] = $hcell_lines->[$seen{$i}];
+            }
+            $seen{$i} = $ci;
+            $hcell_lines->[$i] = $self->_get_header_cell_lines($ci);
         }
-        $self->draw_str("\n");
+        if (@$fcols) {
+            for my $l (0..@{ $hcell_lines->[0] }-1) {
+                $self->draw_border_char(1, 0);
+                for my $i (0..@$fcols-1) {
+                    $self->draw_str($hcell_lines->[$i][$l]);
+                    $self->draw_color_reset;
+                    $self->draw_border_char(1, $i == @$fcols-1 ? 2:1);
+                }
+                $self->draw_str("\n");
+            }
+        }
     }
 
     # draw header-data row separator
-    if ($self->{show_header} && length($self->get_bch(2, 0))) {
+    if ($self->{show_header} && length($self->get_border_char(2, 0))) {
         my @b;
         push @b, 2, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -756,24 +992,36 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 2, $i==@$fcols-1 ? 3:2, 1;
         }
-        $self->draw_bch(@b);
+        $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
 
     # draw data rows
     {
         for my $r (0..@$frows-1) {
-            $self->draw_bch({row_idx=>$r}, 3, 0);
+            my $dcell_lines = []; # index = [fcolnum]
+            my %seen;
             for my $i (0..@$fcols-1) {
                 my $ci = $self->_colidx($fcols->[$i]);
-                my $cell = ta_mbpad($frows->[$r][$i],
-                                    $fcol_widths->[$ci], "r", " ", 1);
-                # XXX give cell fgcolor/bgcolor ...
-                $self->draw_str(
-                    " " x $fcol_lpads->[$ci], $cell, " " x $fcol_rpads->[$ci]);
-                $self->draw_bch({row_idx=>$r}, 3, $i == @$fcols-1 ? 2:1);
+                if (defined($seen{$i})) {
+                    $dcell_lines->[$i] = $dcell_lines->[$seen{$i}];
+                }
+                $seen{$i} = $ci;
+                $dcell_lines->[$i] = $self->_get_data_cell_lines($r, $ci);
             }
-            $self->draw_str("\n");
+
+            if (@$fcols) {
+                for my $l (0..@{ $dcell_lines->[0] }-1) {
+                    $self->draw_border_char({row_idx=>$r}, 3, 0);
+                    for my $i (0..@$fcols-1) {
+                        $self->draw_str($dcell_lines->[$i][$l]);
+                        $self->draw_color_reset;
+                        $self->draw_border_char({row_idx=>$r},
+                                                3, $i == @$fcols-1 ? 2:1);
+                    }
+                    $self->draw_str("\n");
+                }
+            }
 
             # draw separators between row
             if ($self->_should_draw_row_separator($r)) {
@@ -786,7 +1034,7 @@ sub draw {
                             $fcol_rpads->[$ci];
                     push @b, 4, $i==@$fcols-1 ? 3:2, 1;
                 }
-                $self->draw_bch({row_idx=>$r}, @b);
+                $self->draw_border_char({row_idx=>$r}, @b);
                 $self->draw_str("\n");
             }
         } # for frow
@@ -794,7 +1042,7 @@ sub draw {
 
     # draw border bottom line
     {
-        last unless length($self->get_bch(5, 0));
+        last unless length($self->get_border_char(5, 0));
         my @b;
         push @b, 5, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -803,7 +1051,7 @@ sub draw {
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
             push @b, 5, $i==@$fcols-1 ? 3:2, 1;
         }
-        $self->draw_bch(@b);
+        $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
 
@@ -813,7 +1061,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|get_color|get_bch)$
+=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_theme_color|get_border_char)$
 
 =head1 SYNOPSIS
 
@@ -1211,6 +1459,10 @@ Border style specification to use.
 You can set this attribute's value with a specification or border style name.
 See L<"/BORDER STYLES"> for more details.
 
+=head2 border_style_args => HASH
+
+Some border styles can accept arguments. You can set it here.
+
 =head2 color_theme => HASH
 
 Color theme specification to use.
@@ -1265,12 +1517,32 @@ overriden by per-row <bpad> style.
 =head2 cell_fgcolor => RGB|CODE
 
 Set foreground color for all cells. Value should be 6-hexdigit RGB. Can also be
-a coderef that will receive ($row_num, $colname) and should return an RGB color.
-Can be overriden by per-cell C<fgcolor> style.
+a coderef that will receive %args (e.g. row_idx, col_name, col_idx) and should
+return an RGB color. Can be overriden by per-cell C<fgcolor> style.
 
 =head2 cell_bgcolor => RGB|CODE
 
 Like C<cell_fgcolor> but for background color.
+
+=head2 header_fgcolor => RGB|CODE
+
+Set foreground color for all headers. Overrides C<cell_fgcolor> for headers.
+Value should be a 6-hexdigit RGB. Can also be a coderef that will receive %args
+(e.g. col_name, col_idx) and should return an RGB color.
+
+=head2 header_bgcolor => RGB|CODE
+
+Like C<header_fgcolor> but for background color.
+
+=head2 header_align => STR
+
+=head2 header_valign => STR
+
+=head2 header_vpad => STR
+
+=head2 header_tpad => STR
+
+=head2 header_bpad => STR
 
 
 =head1 METHODS
@@ -1457,9 +1729,9 @@ arguments:
  $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
 
 
-=head1 TODO
+=head1 TODO/BUGS
 
-Attributes: header_{pad,vpad,lpad,rpad,tpad,bpad,align,valign,wrap}
+Attributes: header_{pad,lpad,rpad,align,wrap}
 
 Column styles: show_{left,right}_border (shorter name? {l,r}border?)
 
