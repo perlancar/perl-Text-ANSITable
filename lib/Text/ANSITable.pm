@@ -146,7 +146,7 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_COLOR_THEME}) {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
         } elsif ($self->{use_color}) {
-            if ($self->{color_depth} >= 256) {
+            if ($self->{color_depth} >= 2**24) {
                 $ct = 'default_gradation';
             } else {
                 $ct = 'default_nogradation';
