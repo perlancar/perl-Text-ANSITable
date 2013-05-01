@@ -92,6 +92,9 @@ has column_lpad => (
 has column_rpad => (
     is      => 'rw',
 );
+has row_height => (
+    is      => 'rw',
+);
 has row_vpad => (
     is      => 'rw',
     default => sub { 0 },
@@ -591,6 +594,8 @@ sub _prepare_draw {
     my $frow_heights  = []; # index = [frowidx]
     #my $fcell_heights = []; # index = [frowidx][colnum]
     {
+        my $height = $self->{row_height};
+        my $width  = $self->{column_width};
         my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl tpad
         my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl bpad
         my $cswidths  = [map {$self->column_style($_, 'width')} 0..@$cols-1];
@@ -623,12 +628,20 @@ sub _prepare_draw {
                 $val = $wh->[1];
                 if (defined $rsheight) {
                     if ($rsheight < 0) {
-                        # widen to minimum height
+                        # heighten to minimum height
                         $val = -$rsheight if $val < -$rsheight;
                     } else {
                         $val =  $rsheight if $val <  $rsheight;
                     }
+                } elsif (defined $height) {
+                    if ($height < 0) {
+                        # heighten to minimum height
+                        $val = -$height if $val < -$height;
+                    } else {
+                        $val =  $height if $val <  $height;
+                    }
                 }
+
                 $frow_heights->[$i] = $val if !defined($frow_heights->[$i]) ||
                     $frow_heights->[$i] < $val;
 
@@ -639,6 +652,13 @@ sub _prepare_draw {
                         $val = -$cswidths->[$j] if $val < -$cswidths->[$j];
                     } else {
                         $val =  $cswidths->[$j] if $val <  $cswidths->[$j];
+                    }
+                } elsif (defined $width) {
+                    if ($width < 0) {
+                        # widen to minimum width
+                        $val = -$width if $val < -$width;
+                    } else {
+                        $val =  $width if $val <  $width;
                     }
                 }
                 $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
@@ -1277,14 +1297,42 @@ name being requested). You can get the row position from C<< $self->{_draw}{y}
 =head1 COLUMN WIDTHS
 
 By default column width is set just so it is enough to show the widest data.
-Also by default terminal width is respected, so columns are shrunk
-proportionally to fit terminal width.
+This can be customized in the following ways (in order of precedence, from
+lowest):
 
-You can set certain column's width using the C<column_style()> method, e.g.:
+=over
+
+=item * Setting C<column_width> attribute
+
+This sets width for all columns.
+
+=item * Setting per-column width using C<column_style()> method
 
  $t->column_style('colname', width => 20);
 
-You can also use negative number here to mean I<minimum> width.
+=back
+
+You can use negative number to mean I<minimum> width.
+
+
+=head1 ROW HEIGHTS
+
+This can be customized in the following ways (in order of precedence, from
+lowest):
+
+=over
+
+=item * Setting C<row_height> attribute
+
+This sets height for all rows.
+
+=item * Setting per-row height using C<row_style()> method
+
+ $t->row_style(1, height => 2);
+
+=back
+
+You can use negative number to mean I<minimum> height.
 
 
 =head1 CELL (HORIZONTAL) PADDING
@@ -1556,6 +1604,10 @@ overriden by per-column C<lpad> style.
 Set right padding for all columns. Overrides the C<column_pad> attribute. Can be
 overriden by per-column C<rpad> style.
 
+=head2 column_width => INT
+
+Set width for all columns. Can be overriden by per-column C<width> style.
+
 =head2 row_vpad => INT
 
 Set vertical padding for all rows. Can be overriden by per-row C<vpad> style.
@@ -1571,6 +1623,10 @@ Set bottom padding for all rows. Overrides the C<row_vpad> attribute. Can be
 overriden by per-row C<bpad> style.
 
 =head2 row_valign => STR
+
+=head2 row_height => INT
+
+Set height for all rows. Can be overriden by per-row C<height> style.
 
 =head2 cell_fgcolor => RGB|CODE
 
