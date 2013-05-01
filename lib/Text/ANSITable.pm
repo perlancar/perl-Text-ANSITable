@@ -112,7 +112,6 @@ has column_align => (
 );
 has row_valign => (
     is      => 'rw',
-    default => sub { 'top' },
 );
 has color_theme_args => (
     is      => 'rw',
@@ -774,6 +773,7 @@ sub _get_cell_lines {
     push @lines, "" for 1..$tpad;
     my @dlines = split /\r?\n/, $text;
     my ($la, $lb);
+    $valign //= 'top';
     if ($valign =~ /^[Bb]/o) { # bottom
         $la = $height-@dlines;
         $lb = 0;
@@ -789,6 +789,7 @@ sub _get_cell_lines {
     push @lines, "" for 1..$lb;
     push @lines, "" for 1..$bpad;
 
+    $align //= 'left';
     my $pad = $align =~ /^[Ll]/o ? "right" :
         ($align =~ /^[Rr]/o ? "left" : "center");
 
@@ -815,9 +816,9 @@ sub _get_header_cell_lines {
         $fgcolor = $self->color2ansi($self->{cell_fgcolor});
     } elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
         $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
-    } elsif (defined $self->{ct}{colors}{header}) {
+    } elsif (defined $ct->{colors}{header}) {
         $fgcolor = $self->get_theme_color('header');
-    } elsif (defined $self->{ct}{colors}{cell}) {
+    } elsif (defined $ct->{colors}{cell}) {
         $fgcolor = $self->get_theme_color('cell');
     } else {
         $fgcolor = "";
@@ -833,9 +834,9 @@ sub _get_header_cell_lines {
     } elsif (defined $self->{_draw}{fcol_detect}[$i]{bgcolor}) {
         $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
                                      undef, 1);
-    } elsif (defined $self->{ct}{colors}{header_bg}) {
+    } elsif (defined $ct->{colors}{header_bg}) {
         $bgcolor = $self->get_theme_color('header_bg');
-    } elsif (defined $self->{ct}{colors}{cell_bg}) {
+    } elsif (defined $ct->{colors}{cell_bg}) {
         $bgcolor = $self->get_theme_color('cell_bg');
     } else {
         $bgcolor = "";
@@ -851,6 +852,7 @@ sub _get_header_cell_lines {
     my $tpad = $self->{header_tpad} // $self->{header_vpad} // 0;
     my $bpad = $self->{header_bpad} // $self->{header_vpad} // 0;
 
+    #say "D:header cell: i=$i, col=$self->{columns}[$i], fgcolor=$fgcolor, bgcolor=$bgcolor";
     $self->_get_cell_lines(
         $self->{columns}[$i],            # text
         $self->{_draw}{fcol_widths}[$i], # width
@@ -878,7 +880,7 @@ sub _get_data_cell_lines {
         $fgcolor = $self->color2ansi($tmp);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
         $fgcolor = $self->color2ansi($tmp);
-    } elsif (defined $self->{ct}{colors}{cell}) {
+    } elsif (defined $ct->{colors}{cell}) {
         $fgcolor = $self->get_theme_color('cell');
     } else {
         $fgcolor = "";
@@ -900,7 +902,7 @@ sub _get_data_cell_lines {
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
         $bgcolor = $self->color2ansi($tmp,
                                      undef, 1);
-    } elsif (defined $self->{ct}{colors}{cell_bg}) {
+    } elsif (defined $ct->{colors}{cell_bg}) {
         $bgcolor = $self->get_theme_color('cell_bg');
     } else {
         $bgcolor = "";
@@ -1723,7 +1725,7 @@ Set C<COLOR_DEPTH> to 16.
 =head3 How to change border gradation color?
 
 The default color theme applies vertical color gradation to borders from white
-(ffffff) to gray (666666). To change this, set C<border1> and C<border2> theme
+(ffffff) to gray (444444). To change this, set C<border1> and C<border2> theme
 arguments:
 
  $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green

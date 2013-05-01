@@ -56,6 +56,7 @@ _
                 [$rgbf, $rgbb];
             },
 
+            header      => "\e[1m",
             cell_bg     => '',
 
             num_data    => '',
