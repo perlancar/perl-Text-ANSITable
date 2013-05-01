@@ -7,13 +7,14 @@ use Log::Any '$log';
 use Moo;
 
 #use List::Util 'first';
-use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 use Color::ANSI::Util qw(ansi16fg ansi16bg
                          ansi256fg ansi256bg
                          ansi24bfg ansi24bbg
                          detect_color_depth
                     );
+#use List::Util qw(first);
+use Scalar::Util 'looks_like_number';
+use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
 # VERSION
 
@@ -414,6 +415,60 @@ sub cell_style {
     }
 }
 
+# detect column type from data/header name. assign default column align, valign,
+# fgcolor, bgcolor, formats.
+sub _detect_column_types {
+    my $self = shift;
+
+    my $cols = $self->{columns};
+    my $rows = $self->{rows};
+    my $ct   = $self->{color_theme};
+
+    my $fcol_detect = [];
+    my %seen;
+    for my $i (0..@$cols-1) {
+        my $res = {};
+        $fcol_detect->[$i] = $res;
+
+        # optim: skip detecting columns we're not showing
+        next unless $cols->[$i] ~~ $self->{_draw}{fcols};
+
+        # but detect from all rows, not just ones we're showing
+      DETECT:
+        {
+            if ($cols->[$i] =~ /\?/) {
+                $res->{type}    = 'bool';
+                $res->{align}   = 'center';
+                $res->{valign}  = 'center';
+                $res->{fgcolor} = $ct->{colors}{bool_data};
+                $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
+                last DETECT;
+            }
+
+            my $pass = 1;
+            for my $j (0..@$rows) {
+                my $v = $rows->[$j][$i];
+                next unless defined($v);
+                do { $pass=0; last } unless looks_like_number($v);
+            }
+            if ($pass) {
+                $res->{type}    = 'num';
+                $res->{align}   = 'right';
+                $res->{fgcolor} = $ct->{colors}{num_data};
+                last DETECT;
+            }
+
+            # XXX percent (from col /pct|percent|%/
+            # XXX date (unix timestamp / DateTime)
+
+            $res->{type}    = 'str';
+            $res->{fgcolor} = $ct->{colors}{str_data};
+        } # DETECT
+    }
+
+    $self->{_draw}{fcol_detect} = $fcol_detect;
+}
+
 # filter columns & rows, calculate widths/paddings, format data, put the results
 # in _draw (draw data) attribute.
 sub _prepare_draw {
@@ -495,12 +550,9 @@ sub _prepare_draw {
     $self->{_draw}{frow_bpads}        = $frow_bpads;
     $self->{_draw}{frow_orig_indices} = $frow_orig_indices;
 
-    # XXX detect column type from data/header name. assign default column align,
+    # detect column type from data/header name. assign default column align,
     # valign, fgcolor, bgcolor, formats.
-    my $fcol_detect = [];
-    #{
-    #    # ...
-    #}
+    my $fcol_detect = $self->_detect_column_types;
     $self->{_draw}{fcol_detect} = $fcol_detect;
 
     # apply column formats, calculate pads of columns
@@ -814,8 +866,8 @@ sub _get_header_cell_lines {
         $fgcolor = $self->color2ansi($self->{header_fgcolor});
     } elsif (defined $self->{cell_fgcolor}) {
         $fgcolor = $self->color2ansi($self->{cell_fgcolor});
-    } elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
-        $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
+    #} elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
+    #    $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
     } elsif (defined $ct->{colors}{header}) {
         $fgcolor = $self->get_theme_color('header');
     } elsif (defined $ct->{colors}{cell}) {
@@ -852,7 +904,7 @@ sub _get_header_cell_lines {
     my $tpad = $self->{header_tpad} // $self->{header_vpad} // 0;
     my $bpad = $self->{header_bpad} // $self->{header_vpad} // 0;
 
-    #say "D:header cell: i=$i, col=$self->{columns}[$i], fgcolor=$fgcolor, bgcolor=$bgcolor";
+    #use Data::Dump; print "header cell: "; dd {i=>$i, col=>$self->{columns}[$i], fgcolor=>$fgcolor, bgcolor=>$bgcolor};
     $self->_get_cell_lines(
         $self->{columns}[$i],            # text
         $self->{_draw}{fcol_widths}[$i], # width
@@ -865,45 +917,42 @@ sub _get_header_cell_lines {
 sub _get_data_cell_lines {
     my ($self, $y, $x) = @_;
 
-    my $ct = $self->{color_theme};
-    my $oy = $self->{_draw}{frow_orig_indices}[$y];
+    my $ct   = $self->{color_theme};
+    my $oy   = $self->{_draw}{frow_orig_indices}[$y];
+    my $cell = $self->{_draw}{frows}[$y][$x];
+    my $args = {data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
 
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->cell_style($oy, $x, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp);
+        $fgcolor = $self->color2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->row_style($oy, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp);
+        $fgcolor = $self->color2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->column_style($x, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp);
+        $fgcolor = $self->color2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
-        $fgcolor = $self->color2ansi($tmp);
+        $fgcolor = $self->color2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
-        $fgcolor = $self->color2ansi($tmp);
+        $fgcolor = $self->color2ansi($tmp, $args);
     } elsif (defined $ct->{colors}{cell}) {
-        $fgcolor = $self->get_theme_color('cell');
+        $fgcolor = $self->get_theme_color('cell', $args);
     } else {
         $fgcolor = "";
     }
 
     my $bgcolor;
     if (defined ($tmp = $self->cell_style($oy, $x, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp,
-                                     undef, 1);
+        $bgcolor = $self->color2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->row_style($oy, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp,
-                                     undef, 1);
+        $bgcolor = $self->color2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->column_style($x, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp,
-                                     undef, 1);
+        $bgcolor = $self->color2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
-        $bgcolor = $self->color2ansi($tmp,
-                                     undef, 1);
+        $bgcolor = $self->color2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
-        $bgcolor = $self->color2ansi($tmp,
-                                     undef, 1);
+        $bgcolor = $self->color2ansi($tmp, $args, 1);
     } elsif (defined $ct->{colors}{cell_bg}) {
-        $bgcolor = $self->get_theme_color('cell_bg');
+        $bgcolor = $self->get_theme_color('cell_bg', $args);
     } else {
         $bgcolor = "";
     }
@@ -920,7 +969,7 @@ sub _get_data_cell_lines {
 
     #say "D:oy=$oy, y=$y, x=$x, fgcolor=$fgcolor, bgcolor=$bgcolor";
     $self->_get_cell_lines(
-        $self->{_draw}{frows}[$y][$x],    # text
+        $cell,                            # text
         $self->{_draw}{fcol_widths}[$x],  # width
         $self->{_draw}{frow_heights}[$y], # height
         $align, $valign,                  # aligns

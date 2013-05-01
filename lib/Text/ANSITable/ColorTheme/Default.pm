@@ -57,12 +57,18 @@ _
             },
 
             header      => "\e[1m",
-            cell_bg     => '',
+            header_bg   => '202020',
+            cell        => undef,
+            cell_bg     => undef,
 
-            num_data    => '',
-            str_data    => '',
-            date_data   => '',
-            bool_data   => '',
+            num_data    => '66ffff',
+            str_data    => undef,
+            date_data   => undef,
+            bool_data   => sub {
+                my ($self, %args) = @_;
+
+                $args{orig_data} ? '00ff00' : 'ff0000';
+            },
         },
     },
 
