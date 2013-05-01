@@ -1421,6 +1421,8 @@ Column styles: show_{left,right}_border (shorter name? {l,r}border?)
 
 Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
 
+row span? column span?
+
 
 =head1 SEE ALSO
 
