@@ -1,5 +1,13 @@
 Revision history for Text-ANSITable
 
+0.02    2013-05-01 (SHARYANTO)
+
+        [ENHANCEMENTS]
+
+        - Detect bool/num/str column types. Apply some pretty formatting for
+          those.
+
+
 0.01    2013-05-01 (SHARYANTO)
 
         First "real" release (substantial features implemented). Some border
