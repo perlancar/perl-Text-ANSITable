@@ -1244,7 +1244,7 @@ names, hash values are color theme specifications.
 To choose a color theme, either set the C<color_theme> attribute to an available
 color theme or a border specification directly.
 
- $t->color_theme("default_256");
+ $t->color_theme("default_nogradation");
  $t->color_theme("foo");    # dies, no such color theme
  $t->color_theme({ ... });  # set specification directly
 
@@ -1256,21 +1256,22 @@ add some overhead. To avoid searching in all modules, you can specify name using
 C<Subpackage::Name> syntax, e.g.:
 
  # will only search in Text::ANSITable::ColorTheme::Default
- $t->color_theme("Default::default_256");
+ $t->color_theme("Default::default_nogradation");
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
 items must be specified as 6-hexdigit RGB value (like C<ff0088>) or ANSI escape
-codes (e.g. "\e[31;1m" for bold red foregound color, or "\e[48;5;226m" for lemon
-yellow background color). You can also return a 2-element array containing RGB
-value for foreground and background, respectively.
+codes (e.g. C<"\e[31;1m"> for bold red foregound color, or C<"\e[48;5;226m"> for
+lemon yellow background color). You can also return a 2-element array containing
+RGB value for foreground and background, respectively.
 
 For flexibility, color can also be a coderef which should produce a color value.
 This allows you to do, e.g. gradation border color, random color, etc (see
-L<Text::ANSITable::ColorTheme::Demo>). Code will be called with ($self, %args)
-where %args contains various information, like C<name> (the item name being
-requested). You can get the row position from C<< $self->{_draw}{y} >>.
+L<Text::ANSITable::ColorTheme::Demo>). Code will be called with C<< ($self,
+%args) >> where C<%args> contains various information, like C<name> (the item
+name being requested). You can get the row position from C<< $self->{_draw}{y}
+>>.
 
 
 =head1 COLUMN WIDTHS
