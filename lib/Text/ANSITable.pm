@@ -1197,11 +1197,13 @@ To list available border styles:
  say $_ for $t->list_border_styles;
 
 Or you can also try out borders using the provided
-B<ansitable-list-border-styles> script.
+B<ansitable-list-border-styles> script. Or, you can also view the documentation
+for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
+searched.
 
-Border styles are searched in C<Text::ANSITable::BorderStyle::*> modules
-(asciibetically), in the C<%border_styles> variable. Hash keys are border style
-names, hash values are border style specifications.
+Border styles are searched in the C<%border_styles> variable in each searched
+package. Hash keys are border style names, hash values are border style
+specifications.
 
 To choose border style, either set the C<border_style> attribute to an available
 border style or a border specification directly.
@@ -1255,11 +1257,13 @@ To list available color themes:
 
  say $_ for $t->list_color_themes;
 
-Or you can also run the provided B<ansitable-list-color-themes> script.
+Or you can also run the provided B<ansitable-list-color-themes> script. Or you
+can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
+where color themes are searched.
 
-Color themes are searched in C<Text::ANSITable::ColorTheme::*> modules
-(asciibetically), in the C<%color_themes> variable. Hash keys are color theme
-names, hash values are color theme specifications.
+Color themes are searched in the C<%color_themes> variable in each searched
+package. Hash keys are color theme names, hash values are color theme
+specifications.
 
 To choose a color theme, either set the C<color_theme> attribute to an available
 color theme or a border specification directly.
@@ -1474,24 +1478,16 @@ Example:
 =back
 
 
-=head1 COLUMN WRAPPING
-
-By default column wrapping is turned on. You can set it on/off via the
-C<column_wrap> attribute or per-column C<wrap> style.
-
-Note that cell content past the column width will be clipped/truncated.
-
-
 =head1 CELL FORMATS
 
-The formats settings regulates how the data is formatted. The value for this
-setting will be passed to L<Data::Unixish::Apply>'s apply(), as the C<functions>
-argument. So it should be a single string (like C<date>) or an array (like C<<
-['date', ['centerpad', {width=>20}]] >>).
+The C<formats> settings regulates how the data is formatted. The value for this
+setting will be passed to L<Data::Unixish::Apply>'s C<apply()>, as the
+C<functions> argument. So it should be a single string (like C<date>) or an
+array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
-functions are available. Functions of interest to formatting data include: bool,
-num, sprintf, sprintfn, wrap, (among others).
+functions are available. Functions of interest to formatting data include:
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, (among others).
 
 
 =head1 ATTRIBUTES
@@ -1551,8 +1547,8 @@ set to 0, an attempt to select a border style that uses Unicode characters will
 result in an exception.
 
 (In the future, setting C<use_utf8> to 0 might opt the module to use the
-non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. ta_wrap() instead
-of ta_mbwrap(), and so on).
+non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
+instead of C<ta_mbwrap()>, and so on).
 
 =head2 border_style => HASH
 
