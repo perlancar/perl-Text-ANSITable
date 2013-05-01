@@ -4,6 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
 # VERSION
@@ -24,7 +25,7 @@ our %color_themes = (
     #},
 
     #default_256 => {
-    default => {
+    default_gradation => {
         summary => 'Default for 256-color+ terminal (black background)',
         description => <<'_',
 
@@ -65,6 +66,10 @@ _
     },
 
 );
+
+my $ng = clone($color_themes{default_gradation});
+$ng->{colors}{border} = '666666';
+$color_themes{default_nogradation} = $ng;
 
 1;
 # ABSTRACT: Default color themes
