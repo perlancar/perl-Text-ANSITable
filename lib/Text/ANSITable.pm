@@ -1707,6 +1707,8 @@ to display ANSI color codes raw.
 Or, try not using boxchar border styles, use the utf8 or ascii version. Try not
 using colors.
 
+=head2 Formatting data
+
 =head3 How do I format data?
 
 Use the C<formats> per-column style or per-cell style. For example:
@@ -1718,6 +1720,14 @@ Use the C<formats> per-column style or per-cell style. For example:
 
 See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
 available formatting functions.
+
+=head3 How do I wrap long text?
+
+The C<wrap> dux function can be used to wrap text (see: ). You'll want to set
+C<ansi> and C<mb> both to 1 to handle ANSI escape codes and wide characters in
+your text (unless you are sure that your text does not contain those):
+
+ $t->column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
 
 =head2 Border
 
