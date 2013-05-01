@@ -1444,6 +1444,18 @@ supports 256 colors.
 Currently only B<Konsole> and the Konsole-based B<Yakuake> terminal emulator
 software support 24bit colors.
 
+=head3 How to force lower color depth? (e.g. I use Konsole but want 16 colors)
+
+Set C<COLOR_DEPTH> to 16.
+
+=head3 How to change border gradation color?
+
+The default color theme applies vertical color gradation to borders from white
+(ffffff) to gray (666666). To change this, set C<border1> and C<border2> theme
+arguments:
+
+ $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
+
 
 =head1 TODO
 
