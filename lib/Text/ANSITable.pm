@@ -580,6 +580,9 @@ sub _prepare_draw {
                     unless $res->[0] == 200;
                 $res = $res->[2];
                 for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
+            } else {
+                # change null to ''
+                for (0..@$frows-1) { $frows->[$_][$i] //= "" }
             }
             $fcol_lpads->[$i] = $self->column_style($i, 'lpad') //
                 $self->column_style($i, 'pad') // $lpad;
@@ -618,7 +621,7 @@ sub _prepare_draw {
                     );
                     die "Can't format cell ($origi, $cols->[$j]): ".
                         "$res->[0] - $res->[1]" unless $res->[0] == 200;
-                    $frows->[$i][$j] = $res->[2][0];
+                    $frows->[$i][$j] = $res->[2][0] // "";
                 }
 
                 # calculate heights/widths of data
