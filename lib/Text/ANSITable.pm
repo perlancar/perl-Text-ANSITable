@@ -1723,11 +1723,19 @@ available formatting functions.
 
 =head3 How do I wrap long text?
 
-The C<wrap> dux function can be used to wrap text (see: ). You'll want to set
-C<ansi> and C<mb> both to 1 to handle ANSI escape codes and wide characters in
-your text (unless you are sure that your text does not contain those):
+The C<wrap> dux function can be used to wrap text (see: L<Data::Unixish::wrap>).
+You'll want to set C<ansi> and C<mb> both to 1 to handle ANSI escape codes and
+wide characters in your text (unless you are sure that your text does not
+contain those):
 
  $t->column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
+
+=head3 How do I highlight text with color?
+
+The C<ansi::highlight> dux function can be used to highlight text (see:
+L<Data::Unixish::ansi::highlight>).
+
+ $t->column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 
 =head2 Border
 
