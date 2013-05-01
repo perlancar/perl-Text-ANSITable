@@ -1,10 +1,12 @@
 Revision history for Text-ANSITable
 
-0.01    2013-04-28 (SHARYANTO) (not yet released)
+0.01    2013-05-01 (SHARYANTO)
 
         First "real" release (substantial features implemented). Some border
         styles and color themes separated to
-        Text::ANSITable::{BorderStyle,ColorTheme}::Extra.
+        Text::ANSITable::{BorderStyle,ColorTheme}::Extra. Missing features
+        include: autodetection of column types (and setting default
+        align/colors/formats) and tests.
 
 
 0.00    2013-04-12 (SHARYANTO)

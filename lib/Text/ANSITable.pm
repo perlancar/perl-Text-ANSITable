@@ -88,7 +88,7 @@ has column_pad => (
 has column_lpad => (
     is      => 'rw',
 );
-has column_rlpad => (
+has column_rpad => (
     is      => 'rw',
 );
 has row_vpad => (
@@ -1063,7 +1063,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_theme_color|get_border_char)$
+=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
 
 =head1 SYNOPSIS
 
@@ -1487,6 +1487,8 @@ to only show separators drawn using C<add_row_separator()>. If you set this to
 1, lines will be drawn after every data row. If you set this attribute to 0, no
 lines will be drawn whatsoever.
 
+=head2 column_align => STR
+
 =head2 column_pad => INT
 
 Set (horizontal) padding for all columns. Can be overriden by per-column C<pad>
@@ -1515,6 +1517,8 @@ overriden by per-row <tpad> style.
 
 Set bottom padding for all rows. Overrides the C<row_vpad> attribute. Can be
 overriden by per-row <bpad> style.
+
+=head2 row_valign => STR
 
 =head2 cell_fgcolor => RGB|CODE
 
@@ -1557,6 +1561,11 @@ Constructor.
 
 Return the names of available border styles. Border styles will be searched in
 C<Text::ANSITable::BorderStyle::*> modules.
+
+=head2 $t->list_color_themes => LIST
+
+Return the names of available color themes. Color themes will be searched in
+C<Text::ANSITable::ColorTheme::*> modules.
 
 =head2 $t->add_row(\@row[, \%styles]) => OBJ
 
