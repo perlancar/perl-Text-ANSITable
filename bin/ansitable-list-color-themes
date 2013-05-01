@@ -5,23 +5,38 @@ use strict;
 use warnings;
 
 use Text::ANSITable;
-use Text::ASCIITable;
 
 # VERSION
 
-#binmode(STDOUT, ":utf8");
+binmode(STDOUT, ":utf8");
 
 my $t = Text::ANSITable->new;
 my $all_ct = $t->list_color_themes(1);
 
-$t = Text::ASCIITable->new;
-$t->setCols('name', 'module', 'summary', '256');
+$t->columns(['name', 'module', 'summary']);
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
-    $t->addRow($name, $ct->{module}, $ct->{summary}, $ct->{256} ? 1:0);
+    $t->add_row([$name, $ct->{module}, $ct->{summary}]);
 }
 
-print $t;
+say "Tip: you can run me with color theme name as argument to try it out.";
+print $t->draw;
 
-#ABSTRACT: Display a list of color styles using Text::ASCIITable (temp script?)
-#PODNAME: ansitable-list-color-themes-using-asciitable
+if ($ARGV[0]) {
+    require DateTime;
+
+    $t = Text::ANSITable->new;
+    $t->color_theme($ARGV[0]);
+    my $ct = $t->color_theme;
+    $t->columns(['num','percent%','date','bool?','text']);
+    $t->add_row([1, 0.4, DateTime->now, 1, 'hello']);
+    $t->add_row([-3.3, 1, time(), 0, 'world']);
+    $t->add_row_separator;
+    $t->add_row([$_, $_/10, 1367451584+$_*10000, int(rand()*2), "x$_"])
+        for 1..5;
+
+    say "Demo table";
+    print $t->draw;
+}
+#ABSTRACT: Display a list of known color themes
+#PODNAME: ansitable-list-color-themes
