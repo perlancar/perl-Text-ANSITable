@@ -399,7 +399,7 @@ sub _prepare_draw {
     my $self = shift;
 
     $self->{_draw} = {};
-    $self->{_draw}{y} = 0;
+    $self->{_draw}{y} = 0; # current line
     $self->{_draw}{buf} = [];
 
     # ansi codes to set and reset line-drawing mode.
@@ -508,6 +508,8 @@ sub _prepare_draw {
     my $frow_heights  = []; # index = [frowidx]
     my $fcell_heights = []; # index = [frowidx][colnum]
     {
+        my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl tpad
+        my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl bpad
         my $cswidths = [map {$self->column_style($_, 'width')} 0..@$cols-1];
         my $val;
         for my $i (0..@$frows-1) {
@@ -546,12 +548,39 @@ sub _prepare_draw {
                     }
                 }
                 $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
-            }
+            } # col
         }
     }
     $self->{_draw}{frow_heights} = $frow_heights;
     $self->{_draw}{fcol_widths}  = $fcol_widths;
     $self->{_draw}{frows}        = $frows;
+
+    # calculate table width and height
+    {
+        my $w = 0;
+        $w += 1 if length($self->get_bch(3, 0));
+        my $has_vsep = length($self->get_bch(3, 1));
+        for my $i (0..@$cols-1) {
+            next unless $cols->[$i] ~~ $fcols;
+            $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
+            if ($i < @$cols-1) {
+                $w += 1 if $has_vsep;
+            }
+        }
+        $w += 1 if length($self->get_bch(3, 2));
+        $self->{_draw}{table_width}  = $w;
+
+        my $h = 0;
+        $h += 1 if length($self->get_bch(0, 0));
+        $h += $header_height;
+        $h += 1 if length($self->get_bch(2, 0));
+        for my $i (0..@$frows-1) {
+            $h += $frow_tpads->[$i] + $frow_heights->[$i] + $frow_bpads->[$i];
+            $h += 1 if $self->_should_draw_row_separator($i);
+        }
+        $h += 1 if length($self->get_bch(5, 0));
+        $self->{_draw}{table_height}  = $h;
+    }
 }
 
 # push string into the drawing buffer. also updates "cursor" position.
@@ -663,6 +692,14 @@ sub draw_bch {
     $self->draw_str($self->{_draw}{reset_line_draw_mode});
 }
 
+sub _should_draw_row_separator {
+    my ($self, $i) = @_;
+
+    return $i < @{$self->{_draw}{frows}}-1 &&
+        (($self->{show_row_separator}==2 && $i~~$self->{_draw}{frow_separators})
+             || $self->{show_row_separator}==1);
+}
+
 sub draw {
     my ($self) = @_;
 
@@ -671,7 +708,6 @@ sub draw {
     my $cols  = $self->{cols};
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
-    my $frow_sep        = $self->{_draw}{frow_separators};
     my $frow_heights    = $self->{_draw}{frow_heights};
     my $cell_heights    = $self->{_draw}{fcell_heights};
     my $frow_tpads      = $self->{_draw}{frow_tpads};
@@ -740,9 +776,7 @@ sub draw {
             $self->draw_str("\n");
 
             # draw separators between row
-            if ($r < @$frows-1 &&
-                    (($self->{show_row_separator}==2 && $r ~~ $frow_sep)
-                         || $self->{show_row_separator}==1)) {
+            if ($self->_should_draw_row_separator($r)) {
                 my @b;
                 push @b, 4, 0, 1;
                 for my $i (0..@$fcols-1) {
@@ -757,8 +791,6 @@ sub draw {
             }
         } # for frow
     }
-
-    # XXX draw row separator
 
     # draw border bottom line
     {
