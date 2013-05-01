@@ -1310,7 +1310,7 @@ Example:
 =item * Setting per-column left/right padding using C<column_style()> method
 
  $t->column_style('colname', lpad => 0);
- $t->column_style('colname', lpad => 1);
+ $t->column_style('colname', rpad => 1);
 
 =back
 
@@ -1326,7 +1326,7 @@ order of precedence, from lowest):
 
 This sets top and bottom padding.
 
-=item * Setting C<row_tpad>/<row_bpad> attribute
+=item * Setting C<row_tpad>/C<row_bpad> attribute
 
 They set top/bottom padding separately.
 
@@ -1357,9 +1357,9 @@ When adding row:
 =head1 CELL COLORS
 
 By default data format colors are used, e.g. cyan/green for text (using the
-default color scheme). In absense of that, default_fgcolor and default_bgcolor
-from the color scheme are used. You can customize colors in the following ways
-(ordered by precedence, from lowest):
+default color scheme, items C<num_data>, C<bool_data>, etc). In absense of that,
+C<cell_fgcolor> and C<cell_bgcolor> from the color scheme are used. You can
+customize colors in the following ways (ordered by precedence, from lowest):
 
 =over
 
@@ -1398,6 +1398,8 @@ Example:
  $t->cell_style($rownum, $colname, bgcolor => '202020');
 
 =back
+
+For flexibility, all colors can be specified as coderef.
 
 
 =head1 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
@@ -1456,9 +1458,9 @@ Store column names.
 =head2 row_filter => CODE|ARRAY OF INT
 
 When drawing, only show rows that match this. Can be a coderef which will
-receive ($row, $i) and should return bool (true means show this row). Or, can be
-an array which contains indices of rows that should be shown (e.g. C<< [0, 1, 3,
-4] >>).
+receive C<< ($row, $i) >> and should return bool (true means show this row). Or,
+can be an array which contains indices of rows that should be shown (e.g. C<<
+[0, 1, 3, 4] >>).
 
 =head2 column_filter => CODE|ARRAY OF STR
 
@@ -1546,12 +1548,12 @@ style.
 =head2 column_lpad => INT
 
 Set left padding for all columns. Overrides the C<column_pad> attribute. Can be
-overriden by per-column <lpad> style.
+overriden by per-column C<lpad> style.
 
 =head2 column_rpad => INT
 
 Set right padding for all columns. Overrides the C<column_pad> attribute. Can be
-overriden by per-column <rpad> style.
+overriden by per-column C<rpad> style.
 
 =head2 row_vpad => INT
 
@@ -1560,12 +1562,12 @@ Set vertical padding for all rows. Can be overriden by per-row C<vpad> style.
 =head2 row_tpad => INT
 
 Set top padding for all rows. Overrides the C<row_vpad> attribute. Can be
-overriden by per-row <tpad> style.
+overriden by per-row C<tpad> style.
 
 =head2 row_bpad => INT
 
 Set bottom padding for all rows. Overrides the C<row_vpad> attribute. Can be
-overriden by per-row <bpad> style.
+overriden by per-row C<bpad> style.
 
 =head2 row_valign => STR
 
