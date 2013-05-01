@@ -1811,6 +1811,8 @@ arguments:
 
 =head1 TODO/BUGS
 
+Accept color names (blue, red, etc).
+
 Attributes: header_{pad,lpad,rpad,align,wrap}
 
 Column styles: show_{left,right}_border (shorter name? {l,r}border?)
