@@ -1845,6 +1845,10 @@ whatsoever:
 
 Set C<use_color> attribute or C<COLOR> environment to 0.
 
+=head3 How to specify colors using names (e.g. red, 'navy blue') instead of RGB?
+
+Use modules like L<Graphics::ColorNames>.
+
 =head3 I'm not seeing colors when output is piped (e.g. to a pager)!
 
 The default is to disable colors when (-t STDOUT) is false. You can force-enable
@@ -1874,8 +1878,6 @@ arguments:
 
 
 =head1 TODO/BUGS
-
-Accept color names (blue, red, etc).
 
 Attributes: header_{pad,lpad,rpad,align,wrap}
 
