@@ -279,6 +279,25 @@ sub border_style {
     $self->{border_style} = $bs;
 }
 
+sub get_color_theme {
+    my ($self, $ct) = @_;
+
+    my $cts;
+    my $pkg;
+    if ($ct =~ s/(.+):://) {
+        $pkg = $1;
+        my $pkgp = $pkg; $pkgp =~ s!::!/!g;
+        require "Text/ANSITable/ColorTheme/$pkgp.pm";
+        no strict 'refs';
+        $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
+    } else {
+        $cts = $self->list_color_themes(1);
+    }
+    $cts->{$ct} or die "Unknown color theme name '$ct'".
+        ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
+    $ct = $cts->{$ct};
+}
+
 sub color_theme {
     my $self = shift;
 
@@ -288,20 +307,7 @@ sub color_theme {
     my $p2;
     if (!ref($ct)) {
         $p2 = " named $ct";
-        my $cts;
-        my $pkg;
-        if ($ct =~ s/(.+):://) {
-            $pkg = $1;
-            my $pkgp = $pkg; $pkgp =~ s!::!/!g;
-            require "Text/ANSITable/ColorTheme/$pkgp.pm";
-            no strict 'refs';
-            $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
-        } else {
-            $cts = $self->list_color_themes(1);
-        }
-        $cts->{$ct} or die "Unknown color theme name '$ct'".
-            ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
-        $ct = $cts->{$ct};
+        $ct = $self->get_color_theme($ct);
     }
 
     my $err;
@@ -748,36 +754,34 @@ sub get_border_char {
 sub color2ansi {
     my ($self, $c, $args, $is_bg) = @_;
 
-    # already ansi, skip
-
     $args //= {};
-
     if (ref($c) eq 'CODE') {
         $c = $c->($self, %$args);
     }
 
-    unless (index($c, "\e[") >= 0) {
-        if ($self->{color_depth} >= 2**24) {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
-            }
-        } elsif ($self->{color_depth} >= 256) {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi256bg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
-            }
+    # empty or already ansi? skip
+    return '' if !defined($c) || !length($c) || index($c, "\e[") >= 0;
+
+    if ($self->{color_depth} >= 2**24) {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
         } else {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi16bg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
-            }
+            $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
+        }
+    } elsif ($self->{color_depth} >= 256) {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi256bg($c->[1]) : "");
+        } else {
+            $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
+        }
+    } else {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi16bg($c->[1]) : "");
+        } else {
+            $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
         }
     }
     $c;
@@ -1143,7 +1147,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
+=for Pod::Coverage ^(BUILD|get_color_theme|get_border_style|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
 
 =head1 SYNOPSIS
 
