@@ -78,6 +78,19 @@ my $ng = clone($color_themes{default_gradation});
 $ng->{colors}{border} = '666666';
 $color_themes{default_nogradation} = $ng;
 
+my $dgw = clone($color_themes{default_gradation});
+$dgw->{colors}{header_bg} = 'cccccc';
+$dgw->{data}{default_border1} = '000000';
+$dgw->{data}{default_border2} = 'cccccc';
+$dgw->{colors}{num_data}  = '006666',
+$dgw->{colors}{date_data} = '666600';
+$dgw->{colors}{bool_data} = sub {
+    my ($self, %args) = @_;
+
+    $args{orig_data} ? '00cc00' : 'cc0000';
+},
+$color_themes{default_gradation_whitebg} = $dgw;
+
 1;
 # ABSTRACT: Default color themes
 
