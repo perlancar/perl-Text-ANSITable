@@ -447,7 +447,7 @@ sub _detect_column_types {
                 $res->{fgcolor} = $ct->{colors}{bool_data};
                 $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
                 last DETECT;
-            } elsif ($col =~ /date\b/i) {
+            } elsif ($col =~ /date\b|\b[acmsu]?time\b/i) {
                 $res->{type}    = 'date';
                 $res->{align}   = 'right';
                 $res->{fgcolor} = $ct->{colors}{date_data};
