@@ -16,7 +16,8 @@ my $all_ct = $t->list_color_themes(1);
 $t->columns(['name', 'module', 'summary']);
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
-    $t->add_row([$name, $ct->{module}, $ct->{summary}]);
+    $t->add_row([$name, $ct->{module}, $ct->{summary}],
+                {bgcolor=>($ARGV[0] && $ARGV[0] eq $name ? '222200' : undef)});
 }
 
 say "Tip: you can run me with color theme name as argument to try it out.";

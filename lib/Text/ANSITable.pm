@@ -430,21 +430,28 @@ sub _detect_column_types {
     my $fcol_detect = [];
     my %seen;
     for my $i (0..@$cols-1) {
+        my $col = $cols->[$i];
         my $res = {};
         $fcol_detect->[$i] = $res;
 
         # optim: skip detecting columns we're not showing
-        next unless $cols->[$i] ~~ $self->{_draw}{fcols};
+        next unless $col ~~ $self->{_draw}{fcols};
 
         # but detect from all rows, not just ones we're showing
       DETECT:
         {
-            if ($cols->[$i] =~ /\?/) {
+            if ($col =~ /\?/) {
                 $res->{type}    = 'bool';
                 $res->{align}   = 'center';
                 $res->{valign}  = 'center';
                 $res->{fgcolor} = $ct->{colors}{bool_data};
                 $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
+                last DETECT;
+            } elsif ($col =~ /date\b/i) {
+                $res->{type}    = 'date';
+                $res->{align}   = 'right';
+                $res->{fgcolor} = $ct->{colors}{date_data};
+                $res->{formats} = [['date' => {}]];
                 last DETECT;
             }
 

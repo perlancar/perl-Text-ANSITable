@@ -63,7 +63,7 @@ _
 
             num_data    => '66ffff',
             str_data    => undef,
-            date_data   => undef,
+            date_data   => 'cccc00',
             bool_data   => sub {
                 my ($self, %args) = @_;
 
