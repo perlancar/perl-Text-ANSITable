@@ -1880,6 +1880,11 @@ arguments:
 
  $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
 
+=head3 I'm using terminal emulator with white background, the texts are not very visible!
+
+Try using the "*_whitebg" themes, as the other themes are geared towards
+terminal emulators with black background.
+
 
 =head1 TODO/BUGS
 
