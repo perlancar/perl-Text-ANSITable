@@ -26,7 +26,7 @@ our %color_themes = (
 
     #default_256 => {
     default_gradation => {
-        summary => 'Default for 256-color+ terminal (black background)',
+        summary => 'Default (for terminal with black background)',
         description => <<'_',
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
@@ -79,6 +79,7 @@ $ng->{colors}{border} = '666666';
 $color_themes{default_nogradation} = $ng;
 
 my $dgw = clone($color_themes{default_gradation});
+$dgw->{summary} = 'Default (for terminal with white background)';
 $dgw->{colors}{header_bg} = 'cccccc';
 $dgw->{data}{default_border1} = '000000';
 $dgw->{data}{default_border2} = 'cccccc';
