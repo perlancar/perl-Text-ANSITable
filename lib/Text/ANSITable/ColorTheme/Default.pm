@@ -41,8 +41,8 @@ _
 
                 my $pct = ($self->{_draw}{y}+1) / $self->{_draw}{table_height};
 
-                my $rgbf1 = $self->{color_theme_args}{border1} // 'ffffff';
-                my $rgbf2 = $self->{color_theme_args}{border2} // '444444';
+                my $rgbf1 = $self->{color_theme_args}{border1} // $self->{color_theme}{data}{default_border1} // 'ffffff';
+                my $rgbf2 = $self->{color_theme_args}{border2} // $self->{color_theme}{data}{default_border2} // '444444';
                 my $rgbf  = mix_2_rgb_colors($rgbf1, $rgbf2, $pct);
 
                 my $rgbb1 = $self->{color_theme_args}{border1_bg};
