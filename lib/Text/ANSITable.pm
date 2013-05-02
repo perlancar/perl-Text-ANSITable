@@ -156,11 +156,11 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
         } elsif ($self->{use_utf8}) {
-            $bs = 'bricko';
+            $bs = 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
-            $bs = 'single_boxchar';
+            $bs = 'Default::single_boxchar';
         } else {
-            $bs = 'single_ascii';
+            $bs = 'Default::single_ascii';
         }
         $self->border_style($bs);
     }
@@ -172,12 +172,12 @@ sub BUILD {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
         } elsif ($self->{use_color}) {
             if ($self->{color_depth} >= 2**24) {
-                $ct = 'default_gradation';
+                $ct = 'Default::default_gradation';
             } else {
-                $ct = 'default_nogradation';
+                $ct = 'Default::default_nogradation';
             }
         } else {
-            $ct = 'no_color';
+            $ct = 'Default::no_color';
         }
         $self->color_theme($ct);
     }
