@@ -1,5 +1,16 @@
 Revision history for Text-ANSITable
 
+0.03    2013-05-01 (SHARYANTO)
+
+        - Add attributes: column_width, row_height.
+
+        - Add color theme: default_gradation_whitebg.
+
+        - Improve column type detection: date (/[acmsu]time/), percentage (/%/).
+
+        - Fixes to POD.
+
+
 0.02    2013-05-01 (SHARYANTO)
 
         [ENHANCEMENTS]
