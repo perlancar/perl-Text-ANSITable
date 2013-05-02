@@ -462,14 +462,15 @@ sub _detect_column_types {
                 do { $pass=0; last } unless looks_like_number($v);
             }
             if ($pass) {
-                $res->{type}    = 'num';
                 $res->{align}   = 'right';
+                $res->{type}    = 'num';
                 $res->{fgcolor} = $ct->{colors}{num_data};
+                if ($col =~ /(pct|percent(?:age))\b|\%/) {
+                    $res->{formats} = [[num => {style=>'percent'}]];
+                } else {
+                }
                 last DETECT;
             }
-
-            # XXX percent (from col /pct|percent|%/
-            # XXX date (unix timestamp / DateTime)
 
             $res->{type}    = 'str';
             $res->{fgcolor} = $ct->{colors}{str_data};
