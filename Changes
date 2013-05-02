@@ -1,6 +1,12 @@
 Revision history for Text-ANSITable
 
-0.03    2013-05-01 (SHARYANTO)
+0.04    2013-05-02 (SHARYANTO)
+
+        Make the default color theme more readable on terminal emulators with
+        white background.
+
+
+0.03    2013-05-02 (SHARYANTO)
 
         - Add attributes: column_width, row_height.
 
