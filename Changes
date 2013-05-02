@@ -1,5 +1,11 @@
 Revision history for Text-ANSITable
 
+0.05    2013-05-02 (SHARYANTO)
+
+        No functional changes. Fix bug which breaks Data::Format::Pretty when
+        switching from Text::ASCIITable.
+
+
 0.04    2013-05-02 (SHARYANTO)
 
         Make the default color theme more readable on terminal emulators with
