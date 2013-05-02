@@ -880,11 +880,10 @@ sub _get_cell_lines {
     my $pad = $align =~ /^[Ll]/o ? "right" :
         ($align =~ /^[Rr]/o ? "left" : "center");
 
-    @lines = ta_add_color_resets(@lines);
     for (@lines) {
         $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
         # add default color
-        s/\e\[0m(?=.)/\e[0m$color/g;
+        s/\e\[0m(?=.)/\e[0m$color/g if length($color);
         $_ = $color . $_;
     }
 
