@@ -76,6 +76,7 @@ _
 
 my $ng = clone($color_themes{default_gradation});
 $ng->{colors}{border} = '666666';
+delete $ng->{description};
 $color_themes{default_nogradation} = $ng;
 
 my $dgw = clone($color_themes{default_gradation});
