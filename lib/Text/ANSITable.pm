@@ -207,9 +207,11 @@ sub list_border_styles {
             Module::Load::load($mod);
             my $bs = \%{"$mod\::border_styles"};
             for (keys %$bs) {
-                $bs->{$_}{name} = $_;
-                $bs->{$_}{module} = $mod;
-                $all_bs->{$_} = $bs->{$_};
+                my $cutmod = $mod;
+                $cutmod =~ s/^Text::ANSITable::BorderStyle:://;
+                my $name = "$cutmod\::$_";
+                $bs->{$_}{name} = $name;
+                $all_bs->{$name} = $bs->{$_};
             }
         }
     }
@@ -238,9 +240,11 @@ sub list_color_themes {
             Module::Load::load($mod);
             my $ct = \%{"$mod\::color_themes"};
             for (keys %$ct) {
-                $ct->{$_}{name} = $_;
-                $ct->{$_}{module} = $mod;
-                $all_ct->{$_} = $ct->{$_};
+                my $cutmod = $mod;
+                $cutmod =~ s/^Text::ANSITable::ColorTheme:://;
+                my $name = "$cutmod\::$_";
+                $ct->{$_}{name} = $name;
+                $all_ct->{$name} = $ct->{$_};
             }
         }
     }
@@ -268,7 +272,10 @@ sub border_style {
             no strict 'refs';
             $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
         } else {
-            $bss = $self->list_border_styles(1);
+            #$bss = $self->list_border_styles(1);
+            die "Please use SubPackage::name to choose border style, ".
+                "use list_border_styles() or the provided ".
+                    "ansitable-list-border-styles to list available styles";
         }
         $bss->{$bs} or die "Unknown border style name '$bs'".
             ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
@@ -298,7 +305,10 @@ sub get_color_theme {
         no strict 'refs';
         $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
     } else {
-        $cts = $self->list_color_themes(1);
+        #$cts = $self->list_color_themes(1);
+        die "Please use SubPackage::name to choose color theme, ".
+            "use list_color_themes() or the provided ".
+                "ansitable-list-color-themes to list available themes";
     }
     $cts->{$ct} or die "Unknown color theme name '$ct'".
         ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
@@ -1234,8 +1244,8 @@ sub draw {
  my $t = Text::ANSITable->new;
 
  # set styles
- $t->border_style('bold');  # if not, a nice default is picked
- $t->color_theme('sepia');  # if not, a nice default is picked
+ $t->border_style('Default::bold');  # if not, a nice default is picked
+ $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
  # fill data
  $t->columns(["name", "color", "price"]);
@@ -1290,27 +1300,16 @@ B<ansitable-list-border-styles> script. Or, you can also view the documentation
 for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
 searched.
 
-Border styles are searched in the C<%border_styles> variable in each searched
-package. Hash keys are border style names, hash values are border style
-specifications.
-
 To choose border style, either set the C<border_style> attribute to an available
 border style or a border specification directly.
 
- $t->border_style("singleh_boxchar");
- $t->border_style("foo");   # dies, no such border style
+ $t->border_style("Default::singleh_boxchar");
+ $t->border_style("Foo::bar");   # dies, no such border style
  $t->border_style({ ... }); # set specification directly
 
 If no border style is selected explicitly, a nice default will be chosen. You
 can also set the C<ANSITABLE_BORDER_STYLE> environment variable to set the
 default.
-
-When there are lots of C<Text::ANSITable::BorderStyle::*> modules, searching can
-add some overhead. To avoid searching in all modules, you can specify name using
-C<Subpackage::Name> syntax, e.g.:
-
- # will only search in Text::ANSITable::BorderStyle::Default
- $t->color_theme("Default::bricko");
 
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
@@ -1350,26 +1349,15 @@ Or you can also run the provided B<ansitable-list-color-themes> script. Or you
 can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
-Color themes are searched in the C<%color_themes> variable in each searched
-package. Hash keys are color theme names, hash values are color theme
-specifications.
-
 To choose a color theme, either set the C<color_theme> attribute to an available
 color theme or a border specification directly.
 
- $t->color_theme("default_nogradation");
- $t->color_theme("foo");    # dies, no such color theme
+ $t->color_theme("Default::default_nogradation");
+ $t->color_theme("Foo::bar");    # dies, no such color theme
  $t->color_theme({ ... });  # set specification directly
 
 If no color theme is selected explicitly, a nice default will be chosen. You can
 also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
-
-When there are lots of C<Text::ANSITable::ColorTheme::*> modules, searching can
-add some overhead. To avoid searching in all modules, you can specify name using
-C<Subpackage::Name> syntax, e.g.:
-
- # will only search in Text::ANSITable::ColorTheme::Default
- $t->color_theme("Default::default_nogradation");
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
@@ -2037,9 +2025,9 @@ Add something like this first before printing to your output:
 =head3 How to hide borders?
 
 There is currently no C<show_border> attribute. Choose border styles like
-C<space_ascii> or C<none_utf8>:
+C<Default::space_ascii> or C<Default::none_utf8>:
 
- $t->border_style("none");
+ $t->border_style("Default::none");
 
 =head2 I want to hide borders, and I do not want row separators to be shown!
 

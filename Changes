@@ -2,6 +2,15 @@ Revision history for Text-ANSITable
 
 0.07    2013-05-03 (SHARYANTO) (not yet released)
 
+        [INCOMPATIBLE CHANGES]
+
+        - To avoid potential overhead in the future, color_theme() and
+          border_style() now requires "SubPackage::name" syntax to avoid listing
+          and requiring all style/theme modules.
+
+
+        [ENHANCEMENTS]
+
         - Add more FAQ items.
 
 
