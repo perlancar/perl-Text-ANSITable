@@ -74,24 +74,35 @@ _
 
 );
 
-my $ng = clone($color_themes{default_gradation});
-$ng->{colors}{border} = '666666';
-delete $ng->{description};
-$color_themes{default_nogradation} = $ng;
+{
+    my $ct = clone($color_themes{default_gradation});
+    $ct->{summary} = 'Default (for terminal with white background)';
+    $ct->{colors}{header_bg} = 'cccccc';
+    $ct->{data}{default_border1} = '000000';
+    $ct->{data}{default_border2} = 'cccccc';
+    $ct->{colors}{num_data}  = '006666';
+    $ct->{colors}{date_data} = '666600';
+    $ct->{colors}{bool_data} = sub {
+        my ($self, %args) = @_;
+        $args{orig_data} ? '00cc00' : 'cc0000';
+    };
+    $color_themes{default_gradation_whitebg} = $ct;
+}
 
-my $dgw = clone($color_themes{default_gradation});
-$dgw->{summary} = 'Default (for terminal with white background)';
-$dgw->{colors}{header_bg} = 'cccccc';
-$dgw->{data}{default_border1} = '000000';
-$dgw->{data}{default_border2} = 'cccccc';
-$dgw->{colors}{num_data}  = '006666',
-$dgw->{colors}{date_data} = '666600';
-$dgw->{colors}{bool_data} = sub {
-    my ($self, %args) = @_;
 
-    $args{orig_data} ? '00cc00' : 'cc0000';
-},
-$color_themes{default_gradation_whitebg} = $dgw;
+{
+    my $ct = clone($color_themes{default_gradation});
+    $ct->{colors}{border} = '666666';
+    delete $ct->{description};
+    $color_themes{default_nogradation} = $ct;
+}
+
+{
+    my $ct = clone($color_themes{default_gradation_whitebg});
+    $ct->{colors}{border} = '666666';
+    delete $ct->{description};
+    $color_themes{default_nogradation_whitebg} = $ct;
+}
 
 1;
 # ABSTRACT: Default color themes

@@ -13,31 +13,32 @@ binmode(STDOUT, ":utf8");
 my $t = Text::ANSITable->new;
 my $all_ct = $t->list_color_themes(1);
 
+my $chosen = $ARGV[0] // $t->{color_theme}{name};
+
 $t->columns(['Name', 'Summary']);
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
     $t->add_row([$name, $ct->{summary}],
-                {fgcolor=>($ARGV[0] && $ARGV[0] eq $name ? 'aaaa00' : undef)});
+                {fgcolor=>($chosen eq $name ? 'aaaa00' : undef)});
 }
 
 say "Tip: you can run me with color theme name as argument to try it out.";
 print $t->draw;
 
-if ($ARGV[0]) {
-    require DateTime;
+require DateTime;
 
-    $t = Text::ANSITable->new;
-    $t->color_theme($ARGV[0]);
-    my $ct = $t->color_theme;
-    $t->columns(['num','percent%','date','bool?','text']);
-    $t->add_row([1, 0.4, DateTime->now, 1, 'hello']);
-    $t->add_row([-3.3, 1, time(), 0, 'world']);
-    $t->add_row_separator;
-    $t->add_row([$_, $_/10, 1367451584+$_*10000, int(rand()*2), "x$_"])
-        for 1..5;
+$t = Text::ANSITable->new;
+$t->color_theme($chosen);
+my $ct = $t->color_theme;
+$t->columns(['num','percent%','date','bool?','text']);
+$t->add_row([1, 0.4, DateTime->now, 1, 'hello']);
+$t->add_row([-3.3, 1, time(), 0, 'world']);
+$t->add_row_separator;
+$t->add_row([$_, $_/10, 1367451584+$_*10000, int(rand()*2), "x$_"])
+    for 1..5;
 
-    say "Demo table";
-    print $t->draw;
-}
+say "Demo table";
+print $t->draw;
+
 #ABSTRACT: List available color themes for Text::ANSITable
 #PODNAME: ansitable-list-color-themes
