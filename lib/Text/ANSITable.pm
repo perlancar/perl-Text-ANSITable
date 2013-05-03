@@ -1018,7 +1018,7 @@ sub _get_data_cell_lines {
     my $ct   = $self->{color_theme};
     my $oy   = $self->{_draw}{frow_orig_indices}[$y];
     my $cell = $self->{_draw}{frows}[$y][$x];
-    my $args = {y=>$y, x=>$x, data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
+    my $args = {row_num=>$y, col_num=>$x, data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
 
     my $tmp;
     my $fgcolor;
@@ -2112,7 +2112,7 @@ terminal emulators with black background.
 Aside from doing C<< $t->set_row_style($row_num, bgcolor=>...) >> for each row,
 you can also do this:
 
- $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{y} % 2 ? '202020' : undef });
+ $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
 
 
 =head1 TODO/BUGS
