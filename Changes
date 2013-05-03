@@ -8,8 +8,10 @@ Revision history for Text-ANSITable
           border_style() now requires "SubPackage::name" syntax to avoid listing
           and requiring all style/theme modules.
 
-
         [ENHANCEMENTS]
+
+        - Observe ANSITABLE_{STYLE,COLUMN_STYLES,ROW_STYLES,CELL_STYLES} to
+          customize almost everything via environment.
 
         - Add more FAQ items.
 

@@ -18,6 +18,35 @@ use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
 # VERSION
 
+my $ATTRS = [qw(
+
+                  use_color color_depth use_box_chars use_utf8 columns rows
+                  column_filter row_filter show_row_separator show_header
+                  show_header cell_width cell_height cell_pad cell_lpad
+                  cell_rpad cell_vpad cell_tpad cell_bpad cell_fgcolor
+                  cell_bgcolor cell_align cell_valign header_align header_valign
+                  header_vpad header_tpad header_bpad header_fgcolor
+                  header_bgcolor color_theme_args border_style_args
+
+          )];
+my $STYLES = $ATTRS;
+my $COLUMN_STYLES = [qw(
+
+                          type width align valign pad lpad rpad formats fgcolor
+                          bgcolor
+
+                  )];
+my $ROW_STYLES = [qw(
+
+                       height align valign vpad tpad bpad fgcolor bgcolor
+
+               )];
+my $CELL_STYLES = [qw(
+
+                        align valign formats fgcolor bgcolor
+
+                )];
+
 has use_color => (
     is      => 'rw',
     default => sub {
@@ -156,6 +185,19 @@ has border_style_args => (
 
 sub BUILD {
     my ($self, $args) = @_;
+
+    # read ANSITABLE_STYLE env
+    if ($ENV{ANSITABLE_STYLE}) {
+        require JSON;
+        my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
+        for my $k (keys %$s) {
+            my $v = $s->{$k};
+            die "Unknown table style '$k' in ANSITABLE_STYLE environment, ".
+                "please use one of [".join(", ", @$STYLES)."]"
+                    unless $k ~~ $STYLES;
+            $self->{$k} = $v;
+        }
+    }
 
     # pick a default border style
     unless ($self->{border_style}) {
@@ -409,19 +451,12 @@ sub set_column_style {
 
     $col = $self->_colnum($col);
 
-    state $valid_styles = [qw/type
-                              width
-                              align valign
-                              pad lpad rpad
-                              formats
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-column style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$COLUMN_STYLES) . "]" unless $style ~~ $COLUMN_STYLES;
         $self->{_column_styles}[$col]{$style} = $val;
     }
 }
@@ -436,17 +471,12 @@ sub set_row_style {
     my $self = shift;
     my $row  = shift;
 
-    state $valid_styles = [qw/height
-                              align valign
-                              vpad tpad bpad
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-row style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
         $self->{_row_styles}[$row]{$style} = $val;
     }
 }
@@ -465,16 +495,12 @@ sub set_cell_style {
 
     $col = $self->_colnum($col);
 
-    state $valid_styles = [qw/align valign
-                              formats
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-cell style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$CELL_STYLES) . "]" unless $style ~~ $CELL_STYLES;
         $self->{_cell_styles}[$row][$col]{$style} = $val;
     }
 }
@@ -521,8 +547,6 @@ sub _detect_column_types {
                 $type = 'num';
                 if ($col =~ /(pct|percent(?:age))\b|\%/) {
                     $subtype = 'pct';
-                } else {
-                    $subtype = '';
                 }
                 last DETECT;
             }
@@ -542,7 +566,7 @@ sub _detect_column_types {
         } elsif ($type eq 'num') {
             $res->{align}   = 'right';
             $res->{fgcolor} = $ct->{colors}{num_data};
-            if ($subtype eq 'pct') {
+            if (($subtype//"") eq 'pct') {
                 $res->{formats} = [[num => {style=>'percent'}]];
             }
         } else {
@@ -553,6 +577,63 @@ sub _detect_column_types {
     $self->{_draw}{fcol_detect} = $fcol_detect;
 }
 
+sub _read_style_envs {
+    my $self = shift;
+
+    next if $self->{_draw}{read_style_envs}++;
+
+    if ($ENV{ANSITABLE_COLUMN_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
+        for my $col (keys %$ss) {
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$col};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown column style '$k' (for column $col) in ANSITABLE_COLUMN_STYLES environment, ".
+                "please use one of [".join(", ", @$COLUMN_STYLES)."]"
+                    unless $k ~~ $COLUMN_STYLES;
+                $self->{_column_styles}[$ci]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_ROW_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
+        for my $row (keys %$ss) {
+            my $s = $ss->{$row};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown row style '$k' (for row $row) in ANSITABLE_ROW_STYLES environment, ".
+                "please use one of [".join(", ", @$ROW_STYLES)."]"
+                    unless $k ~~ $ROW_STYLES;
+                $self->{_row_styles}[$row]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_CELL_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
+        for my $cell (keys %$ss) {
+            die "Invalid cell specification in ANSITABLE_CELL_STYLES: $cell, please use 'row,col'"
+                unless $cell =~ /^(.+),(.+)$/;
+            my $row = $1;
+            my $col = $2;
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$cell};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown cell style '$k' (for row $row) in ANSITABLE_CELL_STYLES environment, ".
+                "please use one of [".join(", ", @$CELL_STYLES)."]"
+                    unless $k ~~ $CELL_STYLES;
+                $self->{_cell_styles}[$row][$ci]{$k} //= $v;
+            }
+        }
+    }
+}
+
 # filter columns & rows, calculate widths/paddings, format data, put the results
 # in _draw (draw data) attribute.
 sub _prepare_draw {
@@ -561,6 +642,8 @@ sub _prepare_draw {
     $self->{_draw} = {};
     $self->{_draw}{y} = 0; # current line
     $self->{_draw}{buf} = [];
+
+    $self->_read_style_envs;
 
     # ansi codes to set and reset line-drawing mode.
     {
@@ -1861,6 +1944,46 @@ Can be used to set default value for C<border_style> attribute.
 =head2 ANSITABLE_COLOR_THEME => STR
 
 Can be used to set default value for C<border_style> attribute.
+
+=head2 ANSITABLE_STYLE => JSON
+
+Can be used to set table's most attributes. Value should be a JSON-encoded hash
+of C<< attr => val >> pairs. Example:
+
+ % ANSITABLE_STYLE='{"show_row_separator":1}' ansitable-list-border-styles
+
+will display table with row separator lines after every row.
+
+=head2 ANSITABLE_COLUMN_STYLES => JSON
+
+Can be used to set per-column styles. Interpreted right before draw(). Value
+should be a JSON-encoded hash of C<< col => {style => val, ...} >> pairs.
+Example:
+
+ % ANSITABLE_COLUMN_STYLES='{"2":{"type":"num"},"3":{"type":"str"}}' ansitable-list-border-styles
+
+will display the bool columns as num and str instead.
+
+=head2 ANSITABLE_ROW_STYLES => JSON
+
+Can be used to set per-row styles. Interpreted right before draw(). Value should
+be a JSON-encoded a hash of C<< row_num => {style => val, ...} >> pairs.
+Example:
+
+ % ANSITABLE_ROW_STYLES='{"0":{"bgcolor":"000080","vpad":1}}' ansitable-list-border-styles
+
+will display the first row with blue background color and taller height.
+
+=head2 ANSITABLE_CELL_STYLES => JSON
+
+Can be used to set per-cell styles. Interpreted right before draw(). Value
+should be a JSON-encoded a hash of C<< "row_num,col" => {style => val, ...} >>
+pairs. Example:
+
+ % ANSITABLE_CELL_STYLES='{"1,1":{"bgcolor":"008000"}}' ansitable-list-border-styles
+
+will display the second-on-the-left, second-on-the-top cell with green
+background color.
 
 
 =head1 FAQ
