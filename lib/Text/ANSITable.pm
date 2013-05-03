@@ -2129,6 +2129,12 @@ row span? column span?
 
 =head1 SEE ALSO
 
+For collections of border styles, search for <Text::ANSITable::BorderStyle::*>
+modules.
+
+For collections of color themes, search for <Text::ANSITable::ColorTheme::*>
+modules.
+
 Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
 L<Text::ASCIITable> (which I usually used), L<Text::UnicodeTable::Simple>,
 L<Table::Simple> (uses Moose).
