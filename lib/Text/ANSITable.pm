@@ -2152,7 +2152,7 @@ C<Default::space_ascii> or C<Default::none_utf8>:
 
  $t->border_style("Default::none");
 
-=head2 I want to hide borders, and I do not want row separators to be shown!
+=head3 I want to hide borders, and I do not want row separators to be shown!
 
 The default is for separator lines to be drawn if drawn using
 C<add_row_separator()>, e.g.:
