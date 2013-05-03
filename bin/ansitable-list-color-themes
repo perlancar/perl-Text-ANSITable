@@ -13,13 +13,15 @@ binmode(STDOUT, ":utf8");
 my $t = Text::ANSITable->new;
 my $all_ct = $t->list_color_themes(1);
 
-my $chosen = $ARGV[0] // $t->{color_theme}{name};
+my $chosen_ct = $ARGV[0] // $t->{color_theme}{name};
 
 $t->columns(['Name', 'Summary']);
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
-    $t->add_row([$name, $ct->{summary}],
-                {fgcolor=>($chosen eq $name ? 'aaaa00' : undef)});
+    my $selected = $chosen_ct eq $name;
+
+    $t->add_row([$name . ($selected ? " (*)" : ""), $ct->{summary}],
+                {fgcolor=>($selected ? 'aaaa00' : undef)});
 }
 
 say "Tip: you can run me with color theme name as argument to try it out.";
@@ -28,7 +30,7 @@ print $t->draw;
 require DateTime;
 
 $t = Text::ANSITable->new;
-$t->color_theme($chosen);
+$t->color_theme($chosen_ct);
 my $ct = $t->color_theme;
 $t->columns(['num','percent%','date','bool?','text']);
 $t->add_row([1, 0.4, DateTime->now, 1, 'hello']);
