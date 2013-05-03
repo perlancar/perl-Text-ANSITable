@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.07    2013-05-03 (SHARYANTO) (not yet released)
+
+        - Add more FAQ items.
+
+
 0.06    2013-05-03 (SHARYANTO)
 
         This release is a reorganization/tidying up of the API. Lots of
@@ -12,8 +17,8 @@ Revision history for Text-ANSITable
         - Rename attributes 'row_{valign,vpad,tpad,bpad,height}' -> 'cell_*'.
 
         - {column,row,cell}_style() now split to
-          {get,set}_{column,row,cell}_style() to make it stand out/different
-          with table-level {column,row,cell}_* attributes. The set methods now
+          {get,set}_{column,row,cell}_style() to make them stand out/different
+          from table-level {column,row,cell}_* attributes. The set methods now
           can set multiple styles and check for known styles, but they no longer
           return old value.
 
