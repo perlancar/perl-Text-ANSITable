@@ -2193,8 +2193,9 @@ colors by setting C<use_color> attribute or C<COLOR> environment to 1.
 
 =head3 How to enable 256 colors? I'm seeing only 16 colors.
 
-Set your C<TERM> to C<xterm-256color>. Also make sure your terminal emulator
-supports 256 colors.
+Use terminal emulators that support 256 colors, e.g. Konsole, xterm,
+gnome-terminal, PuTTY/pterm (but the last one has minimal Unicode support).
+Better yet, use Konsole or Konsole-based emulators which supports 24bit colors.
 
 =head3 How to enable 24bit colors (true color)?
 
@@ -2227,6 +2228,8 @@ you can also do this:
 
 
 =head1 TODO/BUGS
+
+Most color themes still look crappy on 256 colors (I develop on Konsole).
 
 Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
 {ansi=>1, mb=>1}]]).
