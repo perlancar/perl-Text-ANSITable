@@ -56,7 +56,7 @@ _
                 [$rgbf, $rgbb];
             },
 
-            header      => '808080', # "\e[1m" or "\e[1;7m" currently doesn't work, why?
+            header      => '808080',
             header_bg   => undef,
             cell        => undef,
             cell_bg     => undef,

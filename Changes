@@ -1,5 +1,40 @@
 Revision history for Text-ANSITable
 
+0.06    2013-05-03 (SHARYANTO) (not yet released)
+
+        This release is a reorganization/tidying up of the API. Lots of
+        renaming, sorry.
+
+        [INCOMPATIBLE CHANGES]
+
+        - Rename attributes 'column_{width,align,pad,lpad,rpad}' -> 'cell_*'.
+
+        - Rename attributes 'row_{valign,vpad,tpad,bpad,height}' -> 'cell_*'.
+
+        - {column,row,cell}_style() now split to
+          {get,set}_{column,row,cell}_style() to make it stand out/different
+          with table-level {column,row,cell}_* attributes. The set methods now
+          can set multiple styles and check for known styles, but they no longer
+          return old value.
+
+        - cell() also split to get_cell() and set_cell() (to be more consistent
+          with the above).
+
+        [ENHANCEMENTS]
+
+        - Add per-row/per-cell styles: align, valign.
+
+        - Add more FAQ items.
+
+        [BUG FIXES]
+
+        - Setting column_align/column_valign didn't work.
+
+        - Setting colors with ANSI escape codes didn't work.
+
+        - Proof-read and update POD.
+
+
 0.05    2013-05-02 (SHARYANTO)
 
         No functional changes. Fix bug which breaks Data::Format::Pretty when
