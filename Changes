@@ -1,6 +1,6 @@
 Revision history for Text-ANSITable
 
-0.06    2013-05-03 (SHARYANTO) (not yet released)
+0.06    2013-05-03 (SHARYANTO)
 
         This release is a reorganization/tidying up of the API. Lots of
         renaming, sorry.

@@ -1736,7 +1736,7 @@ Set vertical padding for all cells. Can be overriden by per-row C<vpad> style.
 Set top padding for all cells. Overrides the C<cell_vpad> attribute. Can be
 overriden by per-row C<tpad> style.
 
-=head2 row_bpad => INT
+=head2 cell_bpad => INT
 
 Set bottom padding for all cells. Overrides the C<cell_vpad> attribute. Can be
 overriden by per-row C<bpad> style.
