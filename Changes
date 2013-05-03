@@ -1,5 +1,11 @@
 Revision history for Text-ANSITable
 
+0.08    2013-05-03 (SHARYANTO)
+
+        - Better detect whether to use utf8 border, whitebg/blackbg color theme
+          (using Term::Detect).
+
+
 0.07    2013-05-03 (SHARYANTO)
 
         [INCOMPATIBLE CHANGES]
