@@ -1975,6 +1975,31 @@ Use the C<formats> per-column style or per-cell style. For example:
 See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
 available formatting functions.
 
+=head3 How does the module determine column data type?
+
+Currently: if column name has the word C<date> or C<time> in it, the column is
+assumed to contain B<date> data. If column name has C<?> in it, the column is
+assumed to be B<bool>. If a column contains only numbers (or undefs), it is
+B<num>. Otherwise, it is B<str>.
+
+=head3 How does the module format data types?
+
+Currently: B<num> will be right aligned and applied C<num_data> color (cyan in
+the default theme). B<date> will be centered and applied C<date_data> color
+(gold in the default theme). B<bool> will be centered and formatted as
+check/cross symbol and applied C<bool_data> color (red/green depending on
+whether the data is false/true). B<str> will be applied C<str_data> color (no
+color in the default theme).
+
+Other color themes might use different colors.
+
+=head3 How do I force column to be of a certain data type?
+
+For example, you have a column named B<deleted> but want to display it as
+B<bool>. You can do:
+
+ $t->set_column_type(deleted => type => 'bool');
+
 =head3 How do I wrap long text?
 
 The C<wrap> dux function can be used to wrap text (see: L<Data::Unixish::wrap>).
