@@ -1822,7 +1822,7 @@ Get per-column style for column named/numbered C<$col>.
 
 Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
-C<fgcolor>, C<bgcolor>.
+C<fgcolor>, C<bgcolor>, C<type>.
 
 =head2 $t->get_row_style($row_num) => VAL
 
