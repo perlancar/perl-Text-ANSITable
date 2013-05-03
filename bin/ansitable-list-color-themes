@@ -39,5 +39,5 @@ if ($ARGV[0]) {
     say "Demo table";
     print $t->draw;
 }
-#ABSTRACT: Display a list of known color themes
+#ABSTRACT: List available color themes for Text::ANSITable
 #PODNAME: ansitable-list-color-themes
