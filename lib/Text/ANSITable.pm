@@ -575,7 +575,7 @@ sub _detect_column_types {
             $res->{fgcolor} = $ct->{colors}{bool_data};
             $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
         } elsif ($type eq 'date') {
-            $res->{align}   = 'right';
+            $res->{align}   = 'middle';
             $res->{fgcolor} = $ct->{colors}{date_data};
             $res->{formats} = [['date' => {}]];
         } elsif ($type eq 'num') {
