@@ -677,7 +677,7 @@ sub _prepare_draw {
     if (ref($cf) eq 'CODE') {
         $fcols = [grep {$cf->($_)} @$cols];
     } elsif (ref($cf) eq 'ARRAY') {
-        $fcols = [map {looks_like_number($_) ? $cols->[$_] : $_} @$cf];
+        $fcols = [grep {defined} map {looks_like_number($_) ? $cols->[$_] : $_} @$cf];
     } else {
         $fcols = $cols;
     }
