@@ -550,7 +550,8 @@ sub _detect_column_types {
             if ($col =~ /\?/) {
                 $type = 'bool';
                 last DETECT;
-            } elsif ($col =~ /date\b|\b[acmsu]?time\b/i) {
+            } elsif ($col =~ /(?:\b|_) date (?:\b|_) |
+                              (?:\b|[acmsu_]) time (?:\b|_)/ix) {
                 $type = 'date';
                 last DETECT;
             }
