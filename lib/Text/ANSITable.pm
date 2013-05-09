@@ -550,11 +550,18 @@ sub _detect_column_types {
             if ($col =~ /\?/) {
                 $type = 'bool';
                 last DETECT;
-            } elsif ($col =~ /(?:\b|_) date (?:\b|_) |
-                              (?:\b|[acmsu_]) time (?:\b|_)/ix) {
-                $type = 'date';
-                last DETECT;
             }
+
+            require Parse::VarName;
+            my @words = map {lc} @{ Parse::VarName::split_varname_words(
+                varname=>$col) };
+            for (qw/date time ctime mtime utime atime stime/) {
+                if ($_ ~~ @words) {
+                    $type = 'date';
+                    last DETECT;
+                }
+            }
+
             my $pass = 1;
             for my $j (0..@$rows) {
                 my $v = $rows->[$j][$i];
