@@ -592,7 +592,8 @@ sub _detect_column_types {
         }
     }
 
-    $self->{_draw}{fcol_detect} = $fcol_detect;
+    #use Data::Dump; dd $fcol_detect;
+    $fcol_detect;
 }
 
 sub _read_style_envs {
