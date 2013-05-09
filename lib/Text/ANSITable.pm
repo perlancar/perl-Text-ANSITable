@@ -236,9 +236,11 @@ sub BUILD {
         } elsif ($self->{use_color}) {
             my $bg = $self->_detect_terminal->{default_bgcolor} // '';
             if ($self->{color_depth} >= 2**24) {
-                $ct = 'Default::default_gradation' . ($bg eq 'ffffff' ? '_whitebg' : '');
+                $ct = 'Default::default_gradation' .
+                    ($bg eq 'ffffff' ? '_whitebg' : '');
             } else {
-                $ct = 'Default::default_nogradation' . ($bg eq 'ffffff' ? '_whitebg' : '');;
+                $ct = 'Default::default_nogradation' .
+                    ($bg eq 'ffffff' ? '_whitebg' : '');;
             }
         } else {
             $ct = 'Default::no_color';
@@ -573,7 +575,8 @@ sub _detect_column_types {
             $res->{align}   = 'center';
             $res->{valign}  = 'center';
             $res->{fgcolor} = $ct->{colors}{bool_data};
-            $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
+            $res->{formats} = [[bool => {style => $self->{use_utf8} ?
+                                             "check_cross" : "Y_N"}]];
         } elsif ($type eq 'date') {
             $res->{align}   = 'middle';
             $res->{fgcolor} = $ct->{colors}{date_data};
@@ -605,9 +608,10 @@ sub _read_style_envs {
             my $s = $ss->{$col};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown column style '$k' (for column $col) in ANSITABLE_COLUMN_STYLES environment, ".
-                "please use one of [".join(", ", @$COLUMN_STYLES)."]"
-                    unless $k ~~ $COLUMN_STYLES;
+            die "Unknown column style '$k' (for column $col) in ".
+                "ANSITABLE_COLUMN_STYLES environment, ".
+                    "please use one of [".join(", ", @$COLUMN_STYLES)."]"
+                        unless $k ~~ $COLUMN_STYLES;
                 $self->{_column_styles}[$ci]{$k} //= $v;
             }
         }
@@ -620,9 +624,10 @@ sub _read_style_envs {
             my $s = $ss->{$row};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown row style '$k' (for row $row) in ANSITABLE_ROW_STYLES environment, ".
-                "please use one of [".join(", ", @$ROW_STYLES)."]"
-                    unless $k ~~ $ROW_STYLES;
+            die "Unknown row style '$k' (for row $row) in ".
+                "ANSITABLE_ROW_STYLES environment, ".
+                    "please use one of [".join(", ", @$ROW_STYLES)."]"
+                        unless $k ~~ $ROW_STYLES;
                 $self->{_row_styles}[$row]{$k} //= $v;
             }
         }
@@ -632,17 +637,19 @@ sub _read_style_envs {
         require JSON;
         my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
         for my $cell (keys %$ss) {
-            die "Invalid cell specification in ANSITABLE_CELL_STYLES: $cell, please use 'row,col'"
-                unless $cell =~ /^(.+),(.+)$/;
+            die "Invalid cell specification in ANSITABLE_CELL_STYLES: ".
+                "$cell, please use 'row,col'"
+                    unless $cell =~ /^(.+),(.+)$/;
             my $row = $1;
             my $col = $2;
             my $ci = $self->_colnum($col);
             my $s = $ss->{$cell};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown cell style '$k' (for row $row) in ANSITABLE_CELL_STYLES environment, ".
-                "please use one of [".join(", ", @$CELL_STYLES)."]"
-                    unless $k ~~ $CELL_STYLES;
+            die "Unknown cell style '$k' (for row $row) in ".
+                "ANSITABLE_CELL_STYLES environment, ".
+                    "please use one of [".join(", ", @$CELL_STYLES)."]"
+                        unless $k ~~ $CELL_STYLES;
                 $self->{_cell_styles}[$row][$ci]{$k} //= $v;
             }
         }
@@ -677,7 +684,8 @@ sub _prepare_draw {
     if (ref($cf) eq 'CODE') {
         $fcols = [grep {$cf->($_)} @$cols];
     } elsif (ref($cf) eq 'ARRAY') {
-        $fcols = [grep {defined} map {looks_like_number($_) ? $cols->[$_] : $_} @$cf];
+        $fcols = [grep {defined} map {looks_like_number($_) ?
+                                          $cols->[$_] : $_} @$cf];
     } else {
         $fcols = $cols;
     }
@@ -705,7 +713,7 @@ sub _prepare_draw {
     my $frow_separators = [];
     my $frow_orig_indices = []; # needed when accessing original row data
     {
-        my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl top padding
+        my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl top pad
         my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl botom pad
         my $i = -1;
         my $j = -1;
@@ -1126,7 +1134,8 @@ sub _get_data_cell_lines {
     my $ct   = $self->{color_theme};
     my $oy   = $self->{_draw}{frow_orig_indices}[$y];
     my $cell = $self->{_draw}{frows}[$y][$x];
-    my $args = {row_num=>$y, col_num=>$x, data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
+    my $args = {row_num=>$y, col_num=>$x, data=>$cell,
+                orig_data=>$self->{rows}[$oy][$x]};
 
     my $tmp;
     my $fgcolor;
