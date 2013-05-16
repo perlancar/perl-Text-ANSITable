@@ -2275,10 +2275,10 @@ row span? column span?
 
 =head1 SEE ALSO
 
-For collections of border styles, search for <Text::ANSITable::BorderStyle::*>
+For collections of border styles, search for C<Text::ANSITable::BorderStyle::*>
 modules.
 
-For collections of color themes, search for <Text::ANSITable::ColorTheme::*>
+For collections of color themes, search for C<Text::ANSITable::ColorTheme::*>
 modules.
 
 Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
