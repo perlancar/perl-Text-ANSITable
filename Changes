@@ -1,5 +1,13 @@
 Revision history for Text-ANSITable
 
+0.10    2013-05-16 (SHARYANTO)
+
+        - Add Text::ANSITable::ColorThemeUtil (moved from
+          Text-ANSITable-ColorTheme-Extra, rename sub name)
+
+        - Add get_border_style(), document get_{border_style,color_themes}.
+
+
 0.09    2013-05-16 (SHARYANTO)
 
         Tweaks and small fixes.
