@@ -32,7 +32,7 @@ my $STYLES = $ATTRS;
 my $COLUMN_STYLES = [qw(
 
                           type width align valign pad lpad rpad formats fgcolor
-                          bgcolor
+                          bgcolor wrap
 
                   )];
 my $ROW_STYLES = [qw(
@@ -86,6 +86,9 @@ has rows => (
     default => sub { [] },
 );
 has column_filter => (
+    is => 'rw',
+);
+has column_wrap => (
     is => 'rw',
 );
 has row_filter => (
@@ -605,6 +608,7 @@ sub _detect_column_types {
             }
         } else {
             $res->{fgcolor} = $ct->{colors}{str_data};
+            $res->{wrap}    = 1;
         }
     }
 
@@ -809,13 +813,20 @@ sub _prepare_draw {
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            my $fmts = $self->get_column_style($i, 'formats') //
-                $fcol_detect->[$i]{formats};
-            if (defined $fmts) {
+            my @fmts = @{ $self->get_column_style($i, 'formats') //
+                $fcol_detect->[$i]{formats} // [] };
+            if (($self->get_column_style($i, 'wrap') // $self->{column_wrap} //
+                    $fcol_detect->[$i]{wrap}) &&
+                        defined($fcol_setwidths->[$i]) &&
+                            $fcol_setwidths->[$i]>0) {
+                push @fmts,
+                    [wrap => {mb=>1, ansi=>1, columns=>$fcol_setwidths->[$i]}];
+            }
+            if (@fmts) {
                 require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
                     in => [map {$frows->[$_][$i]} 0..@$frows-1],
-                    functions => $fmts,
+                    functions => \@fmts,
                 );
                 die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
                     unless $res->[0] == 200;
