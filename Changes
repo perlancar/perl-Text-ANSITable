@@ -1,5 +1,14 @@
 Revision history for Text-ANSITable
 
+0.13    2013-05-17 (SHARYANTO)
+
+        - Tweak adjust width algorithm (now always fit wide table to terminal
+          width, when possible).
+
+        - Observe COLUMNS environment variable to override terminal width
+          detection.
+
+
 0.12    2013-05-17 (SHARYANTO)
 
         - Adjust wrappable columns' widths so table fits terminal width
