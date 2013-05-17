@@ -1,5 +1,21 @@
 Revision history for Text-ANSITable
 
+0.11    2013-05-17 (SHARYANTO) (not yet released)
+
+        [BUG FIXES]
+
+        - Positive width/height setting value (cell_width/column 'width'
+          style/cell_height/row 'height' should set maximum and clip content
+          that are too wide/long. Previously it acted like a negative value
+          (setting minimum and still widens/lengthens if content is too
+          wide/long).
+
+        [ENHANCEMENTS]
+
+        - (not yet) add 'wrap' style for convenience. Previously you have to add
+          a 'wrap' format for this.
+
+
 0.10    2013-05-16 (SHARYANTO)
 
         - Add Text::ANSITable::ColorThemeUtil (moved from
