@@ -53,14 +53,14 @@ None of the functions are exported by default, but they are exportable.
 =head2 create_color_theme_transform($basect, $func) => HASH
 
 Create a new color theme by applying transform function C<$func> (code) to base
-theme C<$basect> (hash). For example if you want to create a red-tinted color
+theme C<$basect> (hash). For example if you want to create a reddish color
 theme from the default theme:
 
  use Text::ANSITable;
  use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
  use Text::ANSITable::ColorThemeUtil qw(create_color_theme_transform);
 
- my $basect = Text::ANSITable->get_border_style("Default::default_gradation");
+ my $basect = Text::ANSITable->get_color_theme("Default::default_gradation");
  my $redct = create_color_theme_transform($basect, sub { mix_2_rgb_colors(shift, 'ff0000') });
 
  # use the color theme
