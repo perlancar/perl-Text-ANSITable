@@ -1,5 +1,11 @@
 Revision history for Text-ANSITable
 
+0.12    2013-05-17 (SHARYANTO)
+
+        - Adjust wrappable columns' widths so table fits terminal width
+          (currently naive algorithm)
+
+
 0.11    2013-05-17 (SHARYANTO)
 
         [BUG FIXES]
