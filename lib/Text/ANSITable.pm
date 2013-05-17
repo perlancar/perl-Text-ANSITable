@@ -873,9 +873,14 @@ sub _adjust_column_widths {
     return 0 unless %acols;
 
     # only do this if table width exceeds terminal width
-    require Term::Size;
-    my ($termw, $termh) = Term::Size::chars();
-    return 0 unless $termw;
+    my ($termw, $termh);
+    if ($ENV{COLUMNS}) {
+        $termw = $ENV{COLUMNS};
+    } else {
+        require Term::Size;
+        ($termw, $termh) = Term::Size::chars();
+    }
+    return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
     return 0 unless $excess > 0;
 
@@ -2188,6 +2193,10 @@ Can be used to set default value for the C<box_chars> attribute.
 =head2 UTF8 => BOOL
 
 Can be used to set default value for the C<utf8> attribute.
+
+=head2 COLUMNS => INT
+
+Can be used to override terminal width detection.
 
 =head2 ANSITABLE_BORDER_STYLE => STR
 
