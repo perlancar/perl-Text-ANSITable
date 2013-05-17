@@ -13,7 +13,8 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
                     );
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
+use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
+                        ta_mbwrap);
 
 # VERSION
 
@@ -705,6 +706,201 @@ sub _opt_calc_width_height {
     $wh;
 }
 
+sub _apply_column_formats {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $frows = $self->{_draw}{frows};
+    my $fcols = $self->{_draw}{fcols};
+    my $fcol_detect = $self->{_draw}{fcol_detect};
+
+    my %seen;
+    for my $i (0..@$cols-1) {
+        next unless $cols->[$i] ~~ $fcols;
+        next if $seen{$cols->[$i]}++;
+        my @fmts = @{ $self->get_column_style($i, 'formats') //
+                          $fcol_detect->[$i]{formats} // [] };
+        if (@fmts) {
+            require Data::Unixish::Apply;
+            my $res = Data::Unixish::Apply::apply(
+                in => [map {$frows->[$_][$i]} 0..@$frows-1],
+                functions => \@fmts,
+            );
+            die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
+                unless $res->[0] == 200;
+            $res = $res->[2];
+            for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
+        } else {
+            # change null to ''
+            for (0..@$frows-1) { $frows->[$_][$i] //= "" }
+        }
+    }
+}
+
+sub _apply_cell_formats {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $rows  = $self->{rows};
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+    my $frow_orig_indices = $self->{_draw}{frow_orig_indices};
+
+    for my $i (0..@$frows-1) {
+        my %seen;
+        my $origi = $frow_orig_indices->[$i];
+        for my $j (0..@$cols-1) {
+            next unless $cols->[$j] ~~ $fcols;
+            next if $seen{$cols->[$j]}++;
+
+            my $fmts = $self->get_cell_style($i, $j, 'formats');
+            if (defined $fmts) {
+                require Data::Unixish::Apply;
+                my $res = Data::Unixish::Apply::apply(
+                    in => [ $rows->[$origi][$j] ],
+                    functions => $fmts,
+                );
+                die "Can't format cell ($origi, $cols->[$j]): ".
+                    "$res->[0] - $res->[1]" unless $res->[0] == 200;
+                $frows->[$i][$j] = $res->[2][0] // "";
+            }
+        } # col
+    }
+}
+
+sub _calc_row_widths_heights {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+
+    my $frow_heights = $self->{_draw}{frow_heights};
+    my $fcol_widths  = $self->{_draw}{fcol_widths};
+    my $frow_orig_indices = $self->{_draw}{frow_orig_indices};
+
+    my $height = $self->{cell_height};
+    my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl tpad
+    my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl bpad
+    my $cswidths = [map {$self->get_column_style($_, 'width')} 0..@$cols-1];
+    for my $i (0..@$frows-1) {
+        my %seen;
+        my $origi = $frow_orig_indices->[$i];
+        my $rsheight = $self->get_row_style($origi, 'height');
+        for my $j (0..@$cols-1) {
+            next unless $cols->[$j] ~~ $fcols;
+            next if $seen{$cols->[$j]}++;
+
+            my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
+
+            $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
+            $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
+                || $frow_heights->[$i] < $wh->[1];
+        } # col
+    }
+}
+
+sub _calc_table_width_height {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+    my $fcol_widths  = $self->{_draw}{fcol_widths};
+    my $fcol_lpads   = $self->{_draw}{fcol_lpads};
+    my $fcol_rpads   = $self->{_draw}{fcol_rpads};
+    my $frow_tpads   = $self->{_draw}{frow_tpads};
+    my $frow_bpads   = $self->{_draw}{frow_bpads};
+    my $frow_heights = $self->{_draw}{frow_heights};
+
+    my $w = 0;
+    $w += 1 if length($self->get_border_char(3, 0));
+    my $has_vsep = length($self->get_border_char(3, 1));
+    for my $i (0..@$cols-1) {
+        next unless $cols->[$i] ~~ $fcols;
+        $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
+        if ($i < @$cols-1) {
+            $w += 1 if $has_vsep;
+        }
+    }
+    $w += 1 if length($self->get_border_char(3, 2));
+    $self->{_draw}{table_width}  = $w;
+
+    my $h = 0;
+    $h += 1 if length($self->get_border_char(0, 0)); # top border line
+    $h += $self->{header_tpad} // $self->{header_vpad} //
+        $self->{cell_tpad} // $self->{cell_vpad};
+    $h += $self->{_draw}{header_height};
+    $h += $self->{header_bpad} // $self->{header_vpad} //
+        $self->{cell_bpad} // $self->{cell_vpad};
+    $h += 1 if length($self->get_border_char(2, 0));
+    for my $i (0..@$frows-1) {
+        $h += $frow_tpads->[$i] + $frow_heights->[$i] + $frow_bpads->[$i];
+        $h += 1 if $self->_should_draw_row_separator($i);
+    }
+    $h += 1 if length($self->get_border_char(5, 0));
+    $self->{_draw}{table_height}  = $h;
+}
+
+# if there are text columns with no width set, and the column width is wider
+# than terminal, try to adjust widths so it fit into the terminal, if possible.
+# return 1 if widths (fcol_widths) adjusted.
+sub _adjust_column_widths {
+    my $self = shift;
+
+    # try to find wrappable columns that do not have their widths set. currently
+    # the algorithm is not proper, it just targets columns which are wider than
+    # a hard-coded value (30). it should take into account the longest word in
+    # the content/header, but this will require another pass at the text to
+    # analyze it.
+
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+    my $fcol_setwidths = $self->{_draw}{fcol_setwidths};
+    my $fcol_detect    = $self->{_draw}{fcol_detect};
+    my $fcol_widths    = $self->{_draw}{fcol_widths};
+    my (%acols);
+    for my $i (0..@$fcols-1) {
+        my $ci = $self->_colnum($fcols->[$i]);
+        next if defined($fcol_setwidths->[$ci]) && $fcol_setwidths->[$ci]>0;
+        next if $fcol_widths->[$ci] < 30;
+        next unless $self->get_column_style($ci, 'wrap') //
+            $self->{column_wrap} // $fcol_detect->[$ci]{wrap};
+        $acols{$ci}++;
+    }
+    return 0 unless %acols;
+
+    # only do this if table width exceeds terminal width
+    require Term::Size;
+    my ($termw, $termh) = Term::Size::chars();
+    return 0 unless $termw;
+    my $excess = $self->{_draw}{table_width} - $termw;
+    return 0 unless $excess > 0;
+
+    # reduce text columns proportionally
+    my $w = 0; # total width of all to-be-adjusted columns
+    $w += $fcol_widths->[$_] for keys %acols;
+    return 0 unless $w > 0;
+    my $reduced = 0;
+    for my $ci (keys %acols) {
+        $fcol_widths->[$ci] -= int($fcol_widths->[$ci]/$w * $excess);
+        $fcol_widths->[$ci] = 30 if $fcol_widths->[$ci] < 30;
+        $fcol_setwidths->[$ci] = $fcol_widths->[$ci];
+        $fcol_widths->[$ci] = 0; # reset
+
+        for (0..@$frows-1) {
+            $frows->[$_][$ci] = ta_mbwrap(
+                $frows->[$_][$ci], $fcol_setwidths->[$ci]);
+        }
+    }
+
+    # recalculate column widths
+    $self->_calc_row_widths_heights;
+    $self->_calc_table_width_height;
+
+    1;
+}
+
 # filter columns & rows, calculate widths/paddings, format data, put the results
 # in _draw (draw data) attribute.
 sub _prepare_draw {
@@ -744,11 +940,15 @@ sub _prepare_draw {
     $self->{_draw}{fcol_setwidths}  = $fcol_setwidths;
     $self->{_draw}{frow_setheights} = $frow_setheights;
 
-    # calculate widths/heights of header, store width settings
-    my $fcol_widths = [];    # index = [colnum]
+    # calculate widths/heights of header, store width settings, column [lr]pads
+    my $fcol_widths = []; # index = [colnum]
     my $header_height;
+    my $fcol_lpads  = []; # index = [colnum]
+    my $fcol_rpads  = []; # ditto
     {
         my %seen;
+        my $lpad = $self->{cell_lpad} // $self->{cell_pad}; # tbl-lvl leftp
+        my $rpad = $self->{cell_rpad} // $self->{cell_pad}; # tbl-lvl rightp
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
@@ -758,9 +958,15 @@ sub _prepare_draw {
             $fcol_widths->[$i] = $wh->[0];
             $header_height = $wh->[1]
                 if !defined($header_height) || $header_height < $wh->[1];
+            $fcol_lpads->[$i] = $self->get_column_style($i, 'lpad') //
+                $self->get_column_style($i, 'pad') // $lpad;
+            $fcol_rpads->[$i] = $self->get_column_style($i, 'rpad') //
+                $self->get_column_style($i, 'pad') // $rpad;
         }
     }
     $self->{_draw}{header_height} = $header_height;
+    $self->{_draw}{fcol_lpads}  = $fcol_lpads;
+    $self->{_draw}{fcol_rpads}  = $fcol_rpads;
 
     # calculate vertical paddings of data rows, store height settings
     my $frow_tpads  = []; # index = [frownum]
@@ -793,6 +999,7 @@ sub _prepare_draw {
         }
     }
     $self->{_draw}{fcols}             = $fcols;
+    $self->{_draw}{frows}             = $frows;
     $self->{_draw}{frow_separators}   = $frow_separators;
     $self->{_draw}{frow_tpads}        = $frow_tpads;
     $self->{_draw}{frow_bpads}        = $frow_bpads;
@@ -803,47 +1010,34 @@ sub _prepare_draw {
     my $fcol_detect = $self->_detect_column_types;
     $self->{_draw}{fcol_detect} = $fcol_detect;
 
-    # apply column formats, calculate pads of columns
-    my $fcol_lpads  = []; # index = [colnum]
-    my $fcol_rpads  = []; # ditto
+    # apply column formats
+    $self->_apply_column_formats;
+
+    # calculate row widths/heights
+    $self->{_draw}{frow_heights}  = [];
+    $self->{_draw}{fcol_widths}   = $fcol_widths;
+    $self->_calc_row_widths_heights;
+
+    # wrap wrappable columns
     {
-        my $lpad = $self->{cell_lpad} // $self->{cell_pad}; # tbl-lvl leftp
-        my $rpad = $self->{cell_rpad} // $self->{cell_pad}; # tbl-lvl rightp
         my %seen;
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            my @fmts = @{ $self->get_column_style($i, 'formats') //
-                $fcol_detect->[$i]{formats} // [] };
             if (($self->get_column_style($i, 'wrap') // $self->{column_wrap} //
-                    $fcol_detect->[$i]{wrap}) &&
-                        defined($fcol_setwidths->[$i]) &&
-                            $fcol_setwidths->[$i]>0) {
-                push @fmts,
-                    [wrap => {mb=>1, ansi=>1, columns=>$fcol_setwidths->[$i]}];
+                 $fcol_detect->[$i]{wrap}) &&
+                     defined($fcol_setwidths->[$i]) &&
+                         $fcol_setwidths->[$i]>0) {
+                for (0..@$frows-1) {
+                    $frows->[$_][$i] = ta_mbwrap(
+                        $frows->[$_][$i], $fcol_setwidths->[$i]);
+                }
             }
-            if (@fmts) {
-                require Data::Unixish::Apply;
-                my $res = Data::Unixish::Apply::apply(
-                    in => [map {$frows->[$_][$i]} 0..@$frows-1],
-                    functions => \@fmts,
-                );
-                die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
-                    unless $res->[0] == 200;
-                $res = $res->[2];
-                for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
-            } else {
-                # change null to ''
-                for (0..@$frows-1) { $frows->[$_][$i] //= "" }
-            }
-            $fcol_lpads->[$i] = $self->get_column_style($i, 'lpad') //
-                $self->get_column_style($i, 'pad') // $lpad;
-            $fcol_rpads->[$i] = $self->get_column_style($i, 'rpad') //
-                $self->get_column_style($i, 'pad') // $rpad;
         }
     }
-    $self->{_draw}{fcol_lpads}  = $fcol_lpads;
-    $self->{_draw}{fcol_rpads}  = $fcol_rpads;
+
+    # apply cell formats
+    $self->_apply_cell_formats;
 
     # apply cell formats, calculate widths/heights of data rows
     my $frow_heights  = []; # index = [frownum]
@@ -885,38 +1079,12 @@ sub _prepare_draw {
     }
     $self->{_draw}{frow_heights}  = $frow_heights;
     $self->{_draw}{fcol_widths}   = $fcol_widths;
-    $self->{_draw}{frows}         = $frows;
 
     # calculate table width and height
-    {
-        my $w = 0;
-        $w += 1 if length($self->get_border_char(3, 0));
-        my $has_vsep = length($self->get_border_char(3, 1));
-        for my $i (0..@$cols-1) {
-            next unless $cols->[$i] ~~ $fcols;
-            $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
-            if ($i < @$cols-1) {
-                $w += 1 if $has_vsep;
-            }
-        }
-        $w += 1 if length($self->get_border_char(3, 2));
-        $self->{_draw}{table_width}  = $w;
+    $self->_calc_table_width_height;
 
-        my $h = 0;
-        $h += 1 if length($self->get_border_char(0, 0)); # top border line
-        $h += $self->{header_tpad} // $self->{header_vpad} //
-                   $self->{cell_tpad} // $self->{cell_vpad};
-        $h += $header_height;
-        $h += $self->{header_bpad} // $self->{header_vpad} //
-                   $self->{cell_bpad} // $self->{cell_vpad};
-        $h += 1 if length($self->get_border_char(2, 0));
-        for my $i (0..@$frows-1) {
-            $h += $frow_tpads->[$i] + $frow_heights->[$i] + $frow_bpads->[$i];
-            $h += 1 if $self->_should_draw_row_separator($i);
-        }
-        $h += 1 if length($self->get_border_char(5, 0));
-        $self->{_draw}{table_height}  = $h;
-    }
+    # try to adjust widths if possible (if table is too wide)
+    $self->_adjust_column_widths;
 }
 
 # push string into the drawing buffer. also updates "cursor" position.
@@ -1235,7 +1403,7 @@ sub draw {
 
     $self->_prepare_draw;
 
-    my $cols  = $self->{cols};
+    my $cols  = $self->{columns};
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
     my $frow_heights    = $self->{_draw}{frow_heights};
