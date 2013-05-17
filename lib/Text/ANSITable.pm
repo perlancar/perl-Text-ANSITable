@@ -1739,6 +1739,12 @@ once.
 Internal note: During drawing, column names will be filtered and put into C<<
 $t->{_draw}{fcols} >>.
 
+=head2 column_wrap => BOOL
+
+Set column wrapping for all columns. Can be overriden by per-column C<wrap>
+style. By default column wrapping will only be done for text columns and when
+width is explicitly set to a positive value.
+
 =head2 use_color => BOOL
 
 Whether to output color. Default is taken from C<COLOR> environment variable, or
@@ -1952,7 +1958,7 @@ Get per-column style for column named/numbered C<$col>.
 
 Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
-C<fgcolor>, C<bgcolor>, C<type>.
+C<fgcolor>, C<bgcolor>, C<type>, C<wrap>.
 
 =head2 $t->get_row_style($row_num) => VAL
 
