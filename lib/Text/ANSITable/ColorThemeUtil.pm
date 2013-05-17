@@ -48,8 +48,6 @@ sub create_color_theme_transform {
 
 =head1 FUNCTIONS
 
-None of the functions are exported by default, but they are exportable.
-
 =head2 create_color_theme_transform($basect, $func) => HASH
 
 Create a new color theme by applying transform function C<$func> (code) to base
