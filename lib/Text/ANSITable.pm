@@ -1,6 +1,7 @@
 package Text::ANSITable;
 
 use 5.010001;
+use experimental 'smartmatch';
 use strict;
 use warnings;
 use Log::Any '$log';
