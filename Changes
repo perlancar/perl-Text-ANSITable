@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.14    2013-06-25 (SHARYANTO)
+
+        No functional changes. Add 'use experimental "smartmatch"' for 5.18+.
+
+
 0.13    2013-05-17 (SHARYANTO)
 
         - Tweak adjust width algorithm (now always fit wide table to terminal
