@@ -1,4 +1,5 @@
 Revision history for Text-ANSITable
+        - Fix smartmatch warnings (RT#85618)
 
 0.14    2013-06-25 (SHARYANTO)
 
