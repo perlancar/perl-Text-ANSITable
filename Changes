@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.15    2013-06-26 (SHARYANTO)
+
+        No functional changes. Second attempt: 'use experimental "smartmatch"'
+        must be given after 'use Moo' (or 'use warnings', to be exact, since Moo
+        does that for us).
+
+
 0.14    2013-06-25 (SHARYANTO)
 
         No functional changes. Add 'use experimental "smartmatch"' for 5.18+.
