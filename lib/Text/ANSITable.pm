@@ -1,11 +1,9 @@
 package Text::ANSITable;
 
 use 5.010001;
-use experimental 'smartmatch';
-use strict;
-use warnings;
 use Log::Any '$log';
 use Moo;
+use experimental 'smartmatch';
 
 #use List::Util 'first';
 use Color::ANSI::Util qw(ansi16fg ansi16bg
