@@ -72,9 +72,12 @@ has use_utf8 => (
     is      => 'rw',
     default => sub {
         my $self = shift;
-        $ENV{UTF8} //
-            $self->_detect_terminal->{unicode} //
-                (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
+        return $ENV{UTF8} if defined $ENV{UTF8};
+        my $termuni = $self->_detect_terminal->{unicode};
+        if (defined $termuni) {
+            return $termuni && (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
+        }
+        0;
     },
 );
 has columns => (
