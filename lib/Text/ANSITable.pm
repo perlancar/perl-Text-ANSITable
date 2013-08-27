@@ -1583,6 +1583,22 @@ sub draw {
  # draw it!
  say $t->draw;
 
+Samples of output:
+
+=begin HTML
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable1.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable2.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable3.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable4.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable5.png" /></p>
+
+=end HTML
+
 
 =head1 DESCRIPTION
 
