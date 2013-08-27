@@ -1,15 +1,21 @@
 Revision history for Text-ANSITable
 
+0.16    2013-08-27 (SHARYANTO) (not yet released)
+
+        - Better default for utf8: turn off if terminal supports Unicode but
+          LANG setting is not Unicode.
+
+
 0.15    2013-06-26 (SHARYANTO)
 
-        No functional changes. Second attempt: 'use experimental "smartmatch"'
-        must be given after 'use Moo' (or 'use warnings', to be exact, since Moo
-        does that for us).
+        - No functional changes. Second attempt: 'use experimental "smartmatch"'
+          must be given after 'use Moo' (or 'use warnings', to be exact, since
+          Moo does that for us).
 
 
 0.14    2013-06-25 (SHARYANTO)
 
-        No functional changes. Add 'use experimental "smartmatch"' for 5.18+.
+        - No functional changes. Add 'use experimental "smartmatch"' for 5.18+.
 
 
 0.13    2013-05-17 (SHARYANTO)
@@ -53,7 +59,7 @@ Revision history for Text-ANSITable
 
 0.09    2013-05-16 (SHARYANTO)
 
-        Tweaks and small fixes.
+        - Tweaks and small fixes.
 
         - Allow column_filter to specify column numbers instead of column names,
           convert them all to column names.
@@ -93,8 +99,8 @@ Revision history for Text-ANSITable
 
 0.06    2013-05-03 (SHARYANTO)
 
-        This release is a reorganization/tidying up of the API. Lots of
-        renaming, sorry.
+        - This release is a reorganization/tidying up of the API. Lots of
+          renaming, sorry.
 
         [INCOMPATIBLE CHANGES]
 
@@ -128,14 +134,14 @@ Revision history for Text-ANSITable
 
 0.05    2013-05-02 (SHARYANTO)
 
-        No functional changes. Fix bug which breaks Data::Format::Pretty when
-        switching from Text::ASCIITable.
+        - No functional changes. Fix bug which breaks Data::Format::Pretty when
+          switching from Text::ASCIITable.
 
 
 0.04    2013-05-02 (SHARYANTO)
 
-        Make the default color theme more readable on terminal emulators with
-        white background.
+        - Make the default color theme more readable on terminal emulators with
+          white background.
 
 
 0.03    2013-05-02 (SHARYANTO)
@@ -159,13 +165,13 @@ Revision history for Text-ANSITable
 
 0.01    2013-05-01 (SHARYANTO)
 
-        First "real" release (substantial features implemented). Some border
-        styles and color themes separated to
-        Text::ANSITable::{BorderStyle,ColorTheme}::Extra. Missing features
-        include: autodetection of column types (and setting default
-        align/colors/formats) and tests.
+        - First "real" release (substantial features implemented). Some border
+          styles and color themes separated to
+          Text::ANSITable::{BorderStyle,ColorTheme}::Extra. Missing features
+          include: autodetection of column types (and setting default
+          align/colors/formats) and tests.
 
 
 0.00    2013-04-12 (SHARYANTO)
 
-        First, very very very minimal release.
+        - First, very very very minimal release.
