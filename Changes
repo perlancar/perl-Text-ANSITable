@@ -1,9 +1,12 @@
 Revision history for Text-ANSITable
 
-0.16    2013-08-27 (SHARYANTO) (not yet released)
+0.16    2013-08-27 (SHARYANTO)
 
         - Better default for utf8: turn off if terminal supports Unicode but
           LANG setting is not Unicode.
+
+        - Add some images to POD (inspired by:
+          http://blogs.perl.org/users/gabor_szabo/2013/08/adding-images-to-cpan.html)
 
 
 0.15    2013-06-26 (SHARYANTO)
