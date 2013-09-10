@@ -17,6 +17,8 @@ Revision history for Text-ANSITable
 
 0.17    2013-09-11 (SHARYANTO)
 
+        - Now works on Windows.
+
         - Make the use of Term::Size optional, to make this module work on
           Windows, because currently Term::Size fails to build on my Strawberry
           Perl.
