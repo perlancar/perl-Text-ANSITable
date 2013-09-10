@@ -876,7 +876,7 @@ sub _adjust_column_widths {
     return 0 unless %acols;
 
     # only do this if table width exceeds terminal width
-    my ($termw, $termh);
+    my ($termw, $termh) = (0, 0);
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
     } else {
