@@ -66,7 +66,9 @@ has color_depth => (
 has use_box_chars => (
     is      => 'rw',
     default => sub {
-        $ENV{BOX_CHARS} // 1;
+        return $ENV{BOX_CHARS} if defined $ENV{BOX_CHARS};
+        return 0 if $^O =~ /Win/; # Win32::Console::ANSI doesn't support this
+        1;
     },
 );
 has use_utf8 => (
@@ -884,6 +886,10 @@ sub _adjust_column_widths {
             require Term::Size;
             ($termw, $termh) = Term::Size::chars();
         };
+    } elsif ($^O =~ /Win/) {
+        # iirc correctly, printing at column 80 on windows moves cursor to the
+        # next line, so we reduce it by 1
+        $termw = 79;
     }
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
