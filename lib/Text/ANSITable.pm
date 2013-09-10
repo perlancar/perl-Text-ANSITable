@@ -879,8 +879,10 @@ sub _adjust_column_widths {
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
     } else {
-        require Term::Size;
-        ($termw, $termh) = Term::Size::chars();
+        eval {
+            require Term::Size;
+            ($termw, $termh) = Term::Size::chars();
+        };
     }
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
