@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.20    2013-09-11 (SHARYANTO)
+
+        - More sensible defaults on Windows (80-1 column width, no box chars).
+
+
 0.19    2013-09-11 (SHARYANTO)
 
         - No functional changes. Fix undef error.
