@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.18    2013-09-11 (SHARYANTO)
+
+        - Add 'require Win32::Console::ANSI' for Windows.
+
+
 0.17    2013-09-11 (SHARYANTO)
 
         - Make the use of Term::Size optional, to make this module work on
