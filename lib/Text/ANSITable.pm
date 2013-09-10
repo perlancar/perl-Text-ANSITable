@@ -6,6 +6,7 @@ use Moo;
 use experimental 'smartmatch';
 
 #use List::Util 'first';
+require Win32::Console::ANSI if $^O =~ /Win/;
 use Color::ANSI::Util qw(ansi16fg ansi16bg
                          ansi256fg ansi256bg
                          ansi24bfg ansi24bbg
