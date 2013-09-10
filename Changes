@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.17    2013-09-11 (SHARYANTO)
+
+        - Make the use of Term::Size optional, to make this module work on
+          Windows, because currently Term::Size fails to build on my Strawberry
+          Perl.
+
+
 0.16    2013-08-27 (SHARYANTO)
 
         - Better default for utf8: turn off if terminal supports Unicode but
