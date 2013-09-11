@@ -881,7 +881,7 @@ sub _adjust_column_widths {
     my ($termw, $termh) = (0, 0);
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
-    } elsif (eval { require Term::Size }) {
+    } elsif (eval { require Term::Size; 1 }) {
         ($termw, $termh) = Term::Size::chars();
     } elsif ($^O =~ /Win/) {
         # iirc correctly, printing at column 80 on windows moves cursor to the
