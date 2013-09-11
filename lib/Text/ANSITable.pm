@@ -884,8 +884,9 @@ sub _adjust_column_widths {
     } elsif (eval { require Term::Size; 1 }) {
         ($termw, $termh) = Term::Size::chars();
     } else {
-        # sane default
-        $termw = 80;
+        # sane default, on windows printing to rightmost column causes cursor to
+        # move to the next line.
+        $termw = $^O =~ /Win/ ? 79 : 80;
     }
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
