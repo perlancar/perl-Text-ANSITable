@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.22    2013-09-25 (SHARYANTO)
+
+        - Extract some more code to roles
+          SHARYANTO::Role::{BorderStyle,ColorTheme}.
+
+        - Increase spec version for color theme to v=1.1
+          (SHARYANTO::Role::ColorTheme 0.58) because multiple color codes should
+          now be returned as the more-flexible hash instead of [fg, bg].
+
+
 0.21    2013-09-25 (SHARYANTO)
 
         - No functional changes. Extract some code to roles
