@@ -47,42 +47,6 @@ my $CELL_STYLES = [qw(
 
                 )];
 
-has use_color => (
-    is      => 'rw',
-    default => sub {
-        my $self = shift;
-        $ENV{COLOR} // (-t STDOUT) //
-            $self->_detect_terminal->{color_depth} > 0;
-    },
-);
-has color_depth => (
-    is      => 'rw',
-    default => sub {
-        my $self = shift;
-        return $ENV{COLOR_DEPTH} if defined $ENV{COLOR_DEPTH};
-        return $self->_detect_terminal->{color_depth} // 16;
-    },
-);
-has use_box_chars => (
-    is      => 'rw',
-    default => sub {
-        return $ENV{BOX_CHARS} if defined $ENV{BOX_CHARS};
-        return 0 if $^O =~ /Win/; # Win32::Console::ANSI doesn't support this
-        1;
-    },
-);
-has use_utf8 => (
-    is      => 'rw',
-    default => sub {
-        my $self = shift;
-        return $ENV{UTF8} if defined $ENV{UTF8};
-        my $termuni = $self->_detect_terminal->{unicode};
-        if (defined $termuni) {
-            return $termuni && (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
-        }
-        0;
-    },
-);
 has columns => (
     is      => 'rw',
     default => sub { [] },
@@ -187,24 +151,8 @@ has header_bgcolor => (
     is      => 'rw',
 );
 
-has color_theme_args => (
-    is      => 'rw',
-    default => sub { {} },
-);
-has border_style_args => (
-    is      => 'rw',
-    default => sub { {} },
-);
-
-my $dt_cache;
-sub _detect_terminal {
-    if (!$dt_cache) {
-        require Term::Detect;
-        $dt_cache = Term::Detect::detect_terminal("p") // {};
-        #use Data::Dump; dd $dt_cache;
-    }
-    $dt_cache;
-}
+with 'SHARYANTO::Role::ColorTheme';
+with 'SHARYANTO::Role::BorderStyle';
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -243,7 +191,7 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_COLOR_THEME}) {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
         } elsif ($self->{use_color}) {
-            my $bg = $self->_detect_terminal->{default_bgcolor} // '';
+            my $bg = $self->detect_terminal->{default_bgcolor} // '';
             if ($self->{color_depth} >= 2**24) {
                 $ct = 'Default::default_gradation' .
                     ($bg eq 'ffffff' ? '_whitebg' : '');
@@ -256,160 +204,6 @@ sub BUILD {
         }
         $self->color_theme($ct);
     }
-}
-
-sub list_border_styles {
-    require Module::List;
-    require Module::Load;
-
-    my ($self, $detail) = @_;
-    state $all_bs;
-
-    if (!$all_bs) {
-        my $mods = Module::List::list_modules("Text::ANSITable::BorderStyle::",
-                                              {list_modules=>1});
-        no strict 'refs';
-        $all_bs = {};
-        for my $mod (sort keys %$mods) {
-            $log->tracef("Loading border style module '%s' ...", $mod);
-            Module::Load::load($mod);
-            my $bs = \%{"$mod\::border_styles"};
-            for (keys %$bs) {
-                my $cutmod = $mod;
-                $cutmod =~ s/^Text::ANSITable::BorderStyle:://;
-                my $name = "$cutmod\::$_";
-                $bs->{$_}{name} = $name;
-                $all_bs->{$name} = $bs->{$_};
-            }
-        }
-    }
-
-    if ($detail) {
-        return $all_bs;
-    } else {
-        return sort keys %$all_bs;
-    }
-}
-
-sub list_color_themes {
-    require Module::List;
-    require Module::Load;
-
-    my ($self, $detail) = @_;
-    state $all_ct;
-
-    if (!$all_ct) {
-        my $mods = Module::List::list_modules("Text::ANSITable::ColorTheme::",
-                                              {list_modules=>1});
-        no strict 'refs';
-        $all_ct = {};
-        for my $mod (sort keys %$mods) {
-            $log->tracef("Loading color theme module '%s' ...", $mod);
-            Module::Load::load($mod);
-            my $ct = \%{"$mod\::color_themes"};
-            for (keys %$ct) {
-                my $cutmod = $mod;
-                $cutmod =~ s/^Text::ANSITable::ColorTheme:://;
-                my $name = "$cutmod\::$_";
-                $ct->{$_}{name} = $name;
-                $all_ct->{$name} = $ct->{$_};
-            }
-        }
-    }
-
-    if ($detail) {
-        return $all_ct;
-    } else {
-        return sort keys %$all_ct;
-    }
-}
-
-sub get_border_style {
-    my ($self, $bs) = @_;
-
-    my $bss;
-    my $pkg;
-    if ($bs =~ s/(.+):://) {
-        $pkg = $1;
-        my $pkgp = $pkg; $pkgp =~ s!::!/!g;
-        require "Text/ANSITable/BorderStyle/$pkgp.pm";
-        no strict 'refs';
-        $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
-    } else {
-        #$bss = $self->list_border_styles(1);
-        die "Please use SubPackage::name to choose border style, ".
-            "use list_border_styles() or the provided ".
-                "ansitable-list-border-styles to list available styles";
-    }
-    $bss->{$bs} or die "Unknown border style name '$bs'".
-        ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
-    $bss->{$bs};
-}
-
-sub border_style {
-    my $self = shift;
-
-    if (!@_) { return $self->{border_style} }
-    my $bs = shift;
-
-    my $p2 = "";
-    if (!ref($bs)) {
-        $p2 = " named $bs";
-        $bs = $self->get_border_style($bs);
-    }
-
-    my $err;
-    if ($bs->{box_chars} && !$self->use_box_chars) {
-        $err = "use_box_chars is set to false";
-    } elsif ($bs->{utf8} && !$self->use_utf8) {
-        $err = "use_utf8 is set to false";
-    }
-    die "Can't select border style$p2: $err" if $err;
-
-    $self->{border_style} = $bs;
-}
-
-sub get_color_theme {
-    my ($self, $ct) = @_;
-
-    my $cts;
-    my $pkg;
-    if ($ct =~ s/(.+):://) {
-        $pkg = $1;
-        my $pkgp = $pkg; $pkgp =~ s!::!/!g;
-        require "Text/ANSITable/ColorTheme/$pkgp.pm";
-        no strict 'refs';
-        $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
-    } else {
-        #$cts = $self->list_color_themes(1);
-        die "Please use SubPackage::name to choose color theme, ".
-            "use list_color_themes() or the provided ".
-                "ansitable-list-color-themes to list available themes";
-    }
-    $cts->{$ct} or die "Unknown color theme name '$ct'".
-        ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
-    $cts->{$ct};
-}
-
-sub color_theme {
-    my $self = shift;
-
-    if (!@_) { return $self->{color_theme} }
-    my $ct = shift;
-
-    my $p2 = "";
-    if (!ref($ct)) {
-        $p2 = " named $ct";
-        $ct = $self->get_color_theme($ct);
-    }
-
-    my $err;
-    if (!$ct->{no_color} && !$self->use_color) {
-        $err = "color theme uses color but use_color is set to false";
-    }
-    die "Can't select color theme$p2: $err" if $err;
-
-    $self->{color_theme} = $ct;
 }
 
 sub add_row {
@@ -878,16 +672,7 @@ sub _adjust_column_widths {
     return 0 unless %acols;
 
     # only do this if table width exceeds terminal width
-    my ($termw, $termh) = (0, 0);
-    if ($ENV{COLUMNS}) {
-        $termw = $ENV{COLUMNS};
-    } elsif (eval { require Term::Size; 1 }) {
-        ($termw, $termh) = Term::Size::chars();
-    } else {
-        # sane default, on windows printing to rightmost column causes cursor to
-        # move to the next line.
-        $termw = $^O =~ /Win/ ? 79 : 80;
-    }
+    my $termw = $self->term_width;
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
     return 0 unless $excess > 0;
