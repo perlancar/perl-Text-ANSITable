@@ -5,12 +5,6 @@ use Log::Any '$log';
 use Moo;
 use experimental 'smartmatch';
 
-#use List::Util 'first';
-require Win32::Console::ANSI if $^O =~ /Win/;
-use Color::ANSI::Util qw(ansi16fg ansi16bg
-                         ansi256fg ansi256bg
-                         ansi24bfg ansi24bbg
-                    );
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
@@ -920,72 +914,9 @@ sub draw_str {
     $self;
 }
 
-# pick border character from border style. args is a hashref to be supplied to
-# the coderef if the 'chars' value from the style is a coderef.
-sub get_border_char {
-    my ($self, $y, $x, $n, $args) = @_;
-    my $bch = $self->{border_style}{chars};
-    $n //= 1;
-    if (ref($bch) eq 'CODE') {
-        $bch->($self, y=>$y, x=>$x, n=>$n, %{$args // {}});
-    } else {
-        $bch->[$y][$x] x $n;
-    }
-}
-
-# convert an RGB color (or a coderef that generates an RGB color) to ANSI escape
-# code. args is a hashref to be supplied to coderef as arguments.
-sub color2ansi {
-    my ($self, $c, $args, $is_bg) = @_;
-
-    $args //= {};
-    if (ref($c) eq 'CODE') {
-        $c = $c->($self, %$args);
-    }
-
-    # empty or already ansi? skip
-    return '' if !defined($c) || !length($c);
-    return $c if index($c, "\e[") >= 0;
-
-    if ($self->{color_depth} >= 2**24) {
-        if (ref($c) eq 'ARRAY') {
-            $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
-                (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
-        } else {
-            $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
-        }
-    } elsif ($self->{color_depth} >= 256) {
-        if (ref($c) eq 'ARRAY') {
-            $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
-                (defined($c->[1]) ? ansi256bg($c->[1]) : "");
-        } else {
-            $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
-        }
-    } else {
-        if (ref($c) eq 'ARRAY') {
-            $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
-                (defined($c->[1]) ? ansi16bg($c->[1]) : "");
-        } else {
-            $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
-        }
-    }
-    $c;
-}
-
-# pick color from color theme
-sub get_theme_color {
-    my ($self, $name, $args) = @_;
-
-    return "" if $self->{color_theme}{no_color};
-    my $c = $self->{color_theme}{colors}{$name};
-    return "" unless defined($c) && length($c);
-
-    $self->color2ansi($c, {name=>$name, %{ $args // {} }}, $name =~ /_bg$/);
-}
-
 sub draw_theme_color {
     my $self = shift;
-    my $c = $self->get_theme_color(@_);
+    my $c = $self->get_theme_color_as_ansi(@_);
     $self->draw_str($c) if length($c);
 }
 
@@ -1083,33 +1014,33 @@ sub _get_header_cell_lines {
 
     my $fgcolor;
     if (defined $self->{header_fgcolor}) {
-        $fgcolor = $self->color2ansi($self->{header_fgcolor});
+        $fgcolor = $self->themecol2ansi($self->{header_fgcolor});
     } elsif (defined $self->{cell_fgcolor}) {
-        $fgcolor = $self->color2ansi($self->{cell_fgcolor});
+        $fgcolor = $self->themecol2ansi($self->{cell_fgcolor});
     #} elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
-    #    $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
+    #    $fgcolor = $self->themecol2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
     } elsif (defined $ct->{colors}{header}) {
-        $fgcolor = $self->get_theme_color('header');
+        $fgcolor = $self->get_theme_color_as_ansi('header');
     } elsif (defined $ct->{colors}{cell}) {
-        $fgcolor = $self->get_theme_color('cell');
+        $fgcolor = $self->get_theme_color_as_ansi('cell');
     } else {
         $fgcolor = "";
     }
 
     my $bgcolor;
     if (defined $self->{header_bgcolor}) {
-        $bgcolor = $self->color2ansi($self->{header_bgcolor},
-                                     undef, 1);
+        $bgcolor = $self->themecol2ansi($self->{header_bgcolor},
+                                        undef, 1);
     } elsif (defined $self->{cell_bgcolor}) {
-        $bgcolor = $self->color2ansi($self->{cell_bgcolor},
-                                     undef, 1);
+        $bgcolor = $self->themecol2ansi($self->{cell_bgcolor},
+                                        undef, 1);
     } elsif (defined $self->{_draw}{fcol_detect}[$i]{bgcolor}) {
-        $fgcolor = $self->color2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
-                                     undef, 1);
+        $fgcolor = $self->themecol2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
+                                        undef, 1);
     } elsif (defined $ct->{colors}{header_bg}) {
-        $bgcolor = $self->get_theme_color('header_bg');
+        $bgcolor = $self->get_theme_color_as_ansi('header_bg');
     } elsif (defined $ct->{colors}{cell_bg}) {
-        $bgcolor = $self->get_theme_color('cell_bg');
+        $bgcolor = $self->get_theme_color_as_ansi('cell_bg');
     } else {
         $bgcolor = "";
     }
@@ -1152,34 +1083,34 @@ sub _get_data_cell_lines {
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->get_cell_style($oy, $x, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp, $args);
+        $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_row_style($oy, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp, $args);
+        $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_column_style($x, 'fgcolor'))) {
-        $fgcolor = $self->color2ansi($tmp, $args);
+        $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
-        $fgcolor = $self->color2ansi($tmp, $args);
+        $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
-        $fgcolor = $self->color2ansi($tmp, $args);
+        $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined $ct->{colors}{cell}) {
-        $fgcolor = $self->get_theme_color('cell', $args);
+        $fgcolor = $self->get_theme_color_as_ansi('cell', $args);
     } else {
         $fgcolor = "";
     }
 
     my $bgcolor;
     if (defined ($tmp = $self->get_cell_style($oy, $x, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp, $args, 1);
+        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->get_row_style($oy, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp, $args, 1);
+        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->get_column_style($x, 'bgcolor'))) {
-        $bgcolor = $self->color2ansi($tmp, $args, 1);
+        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
-        $bgcolor = $self->color2ansi($tmp, $args, 1);
+        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
-        $bgcolor = $self->color2ansi($tmp, $args, 1);
+        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined $ct->{colors}{cell_bg}) {
-        $bgcolor = $self->get_theme_color('cell_bg', $args);
+        $bgcolor = $self->get_theme_color_as_ansi('cell_bg', $args);
     } else {
         $bgcolor = "";
     }
@@ -1349,7 +1280,7 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
 =head1 SYNOPSIS
 
@@ -1447,30 +1378,8 @@ default.
 
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
-modules for example, like L<Text::ANSITable::BorderStyle::Default>. Format for
-the C<chars> specification key:
-
- [
-   [A, b, C, D],  # 0
-   [E, F, G],     # 1
-   [H, i, J, K],  # 2
-   [L, M, N],     # 3
-   [O, p, Q, R],  # 4
-   [S, t, U, V],  # 5
- ]
-
- AbbbCbbbD        #0 Top border characters
- E   F   G        #1 Vertical separators for header row
- HiiiJiiiK        #2 Separator between header row and first data row
- L   M   N        #3 Vertical separators for data row
- OpppQpppR        #4 Separator between data rows
- L   M   N        #3
- StttUtttV        #5 Bottom border characters
-
-Each character must have visual width of 1. But if A is an empty string, the top
-border line will not be drawn. Likewise: if H is an empty string, the
-header-data separator line will not be drawn; if S is an empty string, bottom
-border line will not be drawn.
+modules for example, like L<Text::ANSITable::BorderStyle::Default>. For more
+about border styles, refer to L<SHARYANTO::Role::BorderStyles>.
 
 
 =head1 COLOR THEMES
@@ -1495,18 +1404,8 @@ also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
-modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
-items must be specified as 6-hexdigit RGB value (like C<ff0088>) or ANSI escape
-codes (e.g. C<"\e[31;1m"> for bold red foregound color, or C<"\e[48;5;226m"> for
-lemon yellow background color). You can also return a 2-element array containing
-RGB value for foreground and background, respectively.
-
-For flexibility, color can also be a coderef which should produce a color value.
-This allows you to do, e.g. gradation border color, random color, etc (see
-L<Text::ANSITable::ColorTheme::Demo>). Code will be called with C<< ($self,
-%args) >> where C<%args> contains various information, like C<name> (the item
-name being requested). You can get the row position from C<< $self->{_draw}{y}
->>.
+modules for example, like L<Text::ANSITable::ColorTheme::Default>. For more
+about color themes, refer to L<SHARYANTO::Role::ColorTheme>.
 
 
 =head1 COLUMN WIDTHS

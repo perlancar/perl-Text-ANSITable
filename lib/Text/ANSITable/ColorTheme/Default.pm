@@ -12,6 +12,7 @@ use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 our %color_themes = (
 
     no_color => {
+        v => 1.1,
         summary => 'Special theme that means no color',
         colors => {
         },
@@ -19,6 +20,7 @@ our %color_themes = (
     },
 
     #default_16 => {
+    #    v => 1.1,
     #    summary => 'Default for 16-color terminal',
     #    colors => {
     #    },
@@ -26,6 +28,7 @@ our %color_themes = (
 
     #default_256 => {
     default_gradation => {
+        v => 1.1,
         summary => 'Default (for terminal with black background)',
         description => <<'_',
 
@@ -53,7 +56,7 @@ _
                 }
 
                 #say "D:$rgbf, $rgbb";
-                [$rgbf, $rgbb];
+                {fg=>$rgbf, bg=>$rgbb};
             },
 
             header      => '808080',
@@ -106,4 +109,3 @@ _
 
 1;
 # ABSTRACT: Default color themes
-
