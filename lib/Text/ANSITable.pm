@@ -167,8 +167,17 @@ sub BUILD {
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
+        my $force_utf8;
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
+        } elsif ($self->detect_terminal->{emulator_engine} eq 'linux') {
+            # even though Term::Detect::Software decides that linux virtual
+            # console does not support unicode, it actually can display some uni
+            # characters like single borders, so we use it as the default here
+            # instead of singleo_ascii (linux vc doesn't seem to support
+            # box_chars).
+            $force_utf8 = 1;
+            $bs = 'Default::singleo_utf8';
         } elsif ($self->{use_utf8}) {
             $bs = 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
@@ -176,7 +185,10 @@ sub BUILD {
         } else {
             $bs = 'Default::singleo_ascii';
         }
-        $self->border_style($bs);
+        {
+            local $ENV{UTF8} = 1 if $force_utf8;
+            $self->border_style($bs);
+        }
     }
 
     # pick a default color theme
