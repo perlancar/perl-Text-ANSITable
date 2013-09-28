@@ -170,7 +170,8 @@ sub BUILD {
         my $force_utf8;
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
-        } elsif ($self->detect_terminal->{emulator_engine} eq 'linux') {
+        } elsif ($self->detect_terminal->{emulator_engine} eq 'linux' &&
+                     !defined($ENV{UTF8})) {
             # even though Term::Detect::Software decides that linux virtual
             # console does not support unicode, it actually can display some uni
             # characters like single borders, so we use it as the default here
@@ -185,8 +186,9 @@ sub BUILD {
         } else {
             $bs = 'Default::singleo_ascii';
         }
+
         {
-            local $ENV{UTF8} = 1 if $force_utf8;
+            local $self->{use_utf8} = 1 if $force_utf8;
             $self->border_style($bs);
         }
     }
