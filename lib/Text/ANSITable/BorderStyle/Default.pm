@@ -90,6 +90,41 @@ our %border_styles = (
         utf8 => 1,
     },
 
+    spacei_ascii => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','-','-',''], # 4
+            ['','','',''],   # 5
+        ],
+    },
+
+    spacei_boxchar => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','q','q',''], # 4
+            ['','','',''],   # 5
+        ],
+    },
+
+    spacei_utf8 => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','─','─',''], # 4
+            ['','','',''],   # 5
+        ],
+    },
 
     # single
 
@@ -387,4 +422,3 @@ our %border_styles = (
 
 1;
 # ABSTRACT: Default border styles
-
