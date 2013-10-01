@@ -112,6 +112,7 @@ our %border_styles = (
             ['','q','q',''], # 4
             ['','','',''],   # 5
         ],
+        box_chars => 1,
     },
 
     spacei_utf8 => {
@@ -124,6 +125,7 @@ our %border_styles = (
             ['','─','─',''], # 4
             ['','','',''],   # 5
         ],
+        utf8 => 1,
     },
 
     # single

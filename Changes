@@ -1,5 +1,13 @@
 Revision history for Text-ANSITable
 
+0.23    2013-10-01 (SHARYANTO)
+
+        - Add border styles: spacei_{ascii,boxchar,utf8}.
+
+        - Nicer default border style for Linux virtual console (it supports a
+          few Unicode characters, e.g. single lines).
+
+
 0.22    2013-09-25 (SHARYANTO)
 
         - Extract some more code to roles
