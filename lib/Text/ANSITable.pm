@@ -1375,7 +1375,7 @@ To list available border styles:
  say $_ for $t->list_border_styles;
 
 Or you can also try out borders using the provided
-B<ansitable-list-border-styles> script. Or, you can also view the documentation
+L<ansitable-list-border-styles> script. Or, you can also view the documentation
 for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
 searched.
 
@@ -1393,7 +1393,7 @@ default.
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
 modules for example, like L<Text::ANSITable::BorderStyle::Default>. For more
-about border styles, refer to L<SHARYANTO::Role::BorderStyles>.
+about border styles, refer to L<SHARYANTO::Role::BorderStyle>.
 
 
 =head1 COLOR THEMES
@@ -1402,7 +1402,7 @@ To list available color themes:
 
  say $_ for $t->list_color_themes;
 
-Or you can also run the provided B<ansitable-list-color-themes> script. Or you
+Or you can also run the provided L<ansitable-list-color-themes> script. Or you
 can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
@@ -1553,7 +1553,7 @@ Example:
  $t->set_column_style('colname', fgcolor => 'fa8888');
  $t->set_column_style('colname', bgcolor => '202020');
 
-=item * per-row F<fgcolor> and B<bgcolor> styles
+=item * per-row C<fgcolor> and C<bgcolor> styles
 
 Example:
 
@@ -1564,7 +1564,7 @@ When adding row/rows:
  $t->add_row($row, {fgcolor=>..., bgcolor=>...});
  $t->add_rows($rows, {bgcolor=>...});
 
-=item * per-cell F<fgcolor> and B<bgcolor> styles
+=item * per-cell C<fgcolor> and C<bgcolor> styles
 
 Example:
 
@@ -2089,7 +2089,7 @@ Other color themes might use different colors.
 
 =head3 How do I force column to be of a certain data type?
 
-For example, you have a column named B<deleted> but want to display it as
+For example, you have a column named C<deleted> but want to display it as
 B<bool>. You can do:
 
  $t->set_column_type(deleted => type => 'bool');
