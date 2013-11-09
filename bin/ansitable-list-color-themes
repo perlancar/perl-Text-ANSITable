@@ -21,7 +21,7 @@ for my $name (sort keys %$all_ct) {
     my $selected = $chosen_ct eq $name;
 
     $t->add_row([$name . ($selected ? " (*)" : ""), $ct->{summary}],
-                {fgcolor=>($selected ? 'aaaa00' : undef)});
+                {fgcolor=>($selected && $t->use_color ? 'aaaa00' : undef)});
 }
 
 say "Tip: you can run me with color theme name as argument to try it out.";
