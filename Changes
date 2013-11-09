@@ -1,5 +1,14 @@
 Revision history for Text-ANSITable
 
+0.24    2013-11-09 (SHARYANTO)
+
+        - No functional changes.
+
+        - Add/reorganize FAQ items.
+
+        - Respect use_color setting in scripts.
+
+
 0.23    2013-10-01 (SHARYANTO)
 
         - Add border styles: spacei_{ascii,boxchar,utf8}.
