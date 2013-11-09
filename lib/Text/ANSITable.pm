@@ -1973,13 +1973,43 @@ background color.
 
 =head2 General
 
+=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+
+ $t->use_utf8(0);
+ $t->use_box_chars(0);
+ $t->use_color(0);
+ $t->border_style('Default::single_ascii');
+
+and you're good to go. Alternatively you can set environment UTF8=0,
+BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
+
+=head3 Why am I getting 'Wide character in print' warning?
+
+You are probably (by default) using utf8 border styles, and you haven't done
+something like this to your output:
+
+ binmode(STDOUT, ":utf8");
+
+utf8 is by default used because Text::ANSITable detects that your terminal can
+display Unicode characters. If you want to use non-utf8 borders instead, you can
+do:
+
+ $t->use_utf8(0);
+ $t->use_box_chars(0); # optional, if output is still garbled on your terminal
+
+Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
+
 =head3 My table looks garbled when viewed through pager like B<less>!
 
-It's because B<less> escapes ANSI color codes. Try using C<-R> option of B<less>
-to display ANSI color codes raw.
+That's because B<less> by default escapes ANSI color and box_char codes. Try
+using C<-R> option of B<less> to display ANSI color codes raw.
 
-Or, try not using boxchar border styles, use the utf8 or ascii version. Try not
-using colors.
+Or, try not using colors and box_char border styles:
+
+ $t->use_color(0);
+ $t->use_box_chars(0);
+
+Alternatively you can set environment COLOR=0 and BOX_CHARS=0.
 
 =head3 How do I hide some columns/rows when drawing?
 
@@ -2122,18 +2152,17 @@ See L<Data::Unixish::bool> for more details.
 
 =head2 Border
 
-=head3 I'm getting 'Wide character in print' error message when I use utf8 border styles!
-
-Add something like this first before printing to your output:
-
- binmode(STDOUT, ":utf8");
-
 =head3 How to hide borders?
 
 There is currently no C<show_border> attribute. Choose border styles like
 C<Default::space_ascii> or C<Default::none_utf8>:
 
  $t->border_style("Default::none");
+
+=head3 Why are there 'none_ascii' as well 'none_utf8' and 'none_boxchar' border styles?
+
+Because of the row separator, that can still be drawn if C<add_row_separator()>
+is used. See next question.
 
 =head3 I want to hide borders, and I do not want row separators to be shown!
 
