@@ -167,30 +167,39 @@ sub BUILD {
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
-        my $force_utf8;
+
+        my $use_utf8 = $self->{use_utf8};
+
+        # even though Term::Detect::Software decides that linux virtual console
+        # does not support unicode, it actually can display some uni characters
+        # like single borders, so we use it as the default here instead of
+        # singleo_ascii (linux vc doesn't seem to support box_chars).
+        my $linux_vc = $self->detect_terminal->{emulator_engine} eq 'linux' &&
+            !defined($ENV{UTF8});
+        if ($linux_vc) {
+            $use_utf8 = 1;
+            $bs = 'Default::singleo_utf8';
+        }
+        # use statement modifier style to avoid block and make local work
+        local $self->{use_utf8} = 1 if $linux_vc;
+
+        # we only default to utf8 border if user has set something like
+        # binmode(STDOUT, ":utf8") to avoid 'Wide character in print' warning.
+        require PerlIO;
+        my @layers = PerlIO::get_layers(STDOUT);
+        $use_utf8 = 0 unless 'utf8' ~~ @layers;
+
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
-        } elsif ($self->detect_terminal->{emulator_engine} eq 'linux' &&
-                     !defined($ENV{UTF8})) {
-            # even though Term::Detect::Software decides that linux virtual
-            # console does not support unicode, it actually can display some uni
-            # characters like single borders, so we use it as the default here
-            # instead of singleo_ascii (linux vc doesn't seem to support
-            # box_chars).
-            $force_utf8 = 1;
-            $bs = 'Default::singleo_utf8';
-        } elsif ($self->{use_utf8}) {
-            $bs = 'Default::bricko';
+        } elsif ($use_utf8) {
+            $bs //= 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
             $bs = 'Default::singleo_boxchar';
         } else {
             $bs = 'Default::singleo_ascii';
         }
 
-        {
-            local $self->{use_utf8} = 1 if $force_utf8;
-            $self->border_style($bs);
-        }
+        $self->border_style($bs);
     }
 
     # pick a default color theme
