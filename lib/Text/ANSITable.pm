@@ -1994,19 +1994,10 @@ BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
 
 =head3 Why am I getting 'Wide character in print' warning?
 
-You are probably (by default) using utf8 border styles, and you haven't done
-something like this to your output:
+You are probably using a utf8 border style, and you haven't done something like
+this to your output:
 
  binmode(STDOUT, ":utf8");
-
-utf8 is by default used because Text::ANSITable detects that your terminal can
-display Unicode characters. If you want to use non-utf8 borders instead, you can
-do:
-
- $t->use_utf8(0);
- $t->use_box_chars(0); # optional, if output is still garbled on your terminal
-
-Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
 
 =head3 My table looks garbled when viewed through pager like B<less>!
 
