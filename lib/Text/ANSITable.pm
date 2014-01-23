@@ -2009,7 +2009,9 @@ Or, try not using colors and box_char border styles:
  $t->use_color(0);
  $t->use_box_chars(0);
 
-Alternatively you can set environment COLOR=0 and BOX_CHARS=0.
+Note that as of this writing, B<less -R> does not interpret box_char codes so
+you'll need to avoid using box_char border styles if you want your output to
+display properly under B<less>.
 
 =head3 How do I hide some columns/rows when drawing?
 
