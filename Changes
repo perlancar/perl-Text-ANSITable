@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.26    2014-01-23 (SHARYANTO)
+
+        - Allow drawing table with no columns.
+
+        - Bugfix: cell height is 1 not 0 if cell contains empty string.
+
+
 0.25    2014-01-23 (SHARYANTO)
 
         - Tweak default: only default to utf8 border if PerlIO layer 'utf8' has
