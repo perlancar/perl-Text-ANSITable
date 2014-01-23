@@ -429,7 +429,7 @@ sub _detect_column_types {
         }
     }
 
-    #use Data::Dump; dd $fcol_detect;
+    #use Data::Dump; print "D:fcol_detect: "; dd $fcol_detect;
     $fcol_detect;
 }
 
@@ -646,12 +646,14 @@ sub _calc_table_width_height {
     $h += 1 if length($self->get_border_char(0, 0)); # top border line
     $h += $self->{header_tpad} // $self->{header_vpad} //
         $self->{cell_tpad} // $self->{cell_vpad};
-    $h += $self->{_draw}{header_height};
+    $h += $self->{_draw}{header_height} // 0;
     $h += $self->{header_bpad} // $self->{header_vpad} //
         $self->{cell_bpad} // $self->{cell_vpad};
     $h += 1 if length($self->get_border_char(2, 0));
     for my $i (0..@$frows-1) {
-        $h += $frow_tpads->[$i] + $frow_heights->[$i] + $frow_bpads->[$i];
+        $h += ($frow_tpads->[$i] // 0) +
+            ($frow_heights->[$i] // 0) +
+                ($frow_bpads->[$i] // 0);
         $h += 1 if $self->_should_draw_row_separator($i);
     }
     $h += 1 if length($self->get_border_char(5, 0));
@@ -776,7 +778,7 @@ sub _prepare_draw {
 
     # calculate widths/heights of header, store width settings, column [lr]pads
     my $fcol_widths = []; # index = [colnum]
-    my $header_height;
+    my $header_height = 1;
     my $fcol_lpads  = []; # index = [colnum]
     my $fcol_rpads  = []; # ditto
     {
@@ -884,6 +886,7 @@ sub _prepare_draw {
             my %seen;
             my $origi = $frow_orig_indices->[$i];
             my $rsheight = $self->get_row_style($origi, 'height');
+            $frow_heights->[$i] = 1;
             for my $j (0..@$cols-1) {
                 next unless $cols->[$j] ~~ $fcols;
                 next if $seen{$cols->[$j]}++;
@@ -907,8 +910,7 @@ sub _prepare_draw {
                 $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
                 $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
                     || $frow_heights->[$i] < $wh->[1];
-
-            } # col
+            } # each col
         }
     }
     $self->{_draw}{frow_heights}  = $frow_heights;
@@ -919,6 +921,11 @@ sub _prepare_draw {
 
     # try to adjust widths if possible (if table is too wide)
     $self->_adjust_column_widths;
+
+    #use Data::Dump; print "D:frow_heights: "; dd $frow_heights;
+    #use Data::Dump; print "D:fcol_widths: "; dd $fcol_widths;
+    #use Data::Dump; print "D:header_height: "; dd $header_height;
+    #use Data::Dump; print "D:table_height: "; dd $self->{_draw}{table_height};
 }
 
 # push string into the drawing buffer. also updates "cursor" position.
@@ -998,7 +1005,8 @@ sub _get_cell_lines {
 
     my @lines;
     push @lines, "" for 1..$tpad;
-    my @dlines = split /\r?\n/, $text;
+    my @dlines = split(/\r?\n/, $text);
+    @dlines = ("") unless @dlines;
     my ($la, $lb);
     $valign //= 'top';
     if ($valign =~ /^[Bb]/o) { # bottom
@@ -1084,14 +1092,16 @@ sub _get_header_cell_lines {
     my $tpad = $self->{header_tpad} // $self->{header_vpad} // 0;
     my $bpad = $self->{header_bpad} // $self->{header_vpad} // 0;
 
-    #use Data::Dump; print "header cell: "; dd {i=>$i, col=>$self->{columns}[$i], fgcolor=>$fgcolor, bgcolor=>$bgcolor};
-    $self->_get_cell_lines(
+    #use Data::Dump; print "D:header cell: "; dd {i=>$i, col=>$self->{columns}[$i], fgcolor=>$fgcolor, bgcolor=>$bgcolor};
+    my $res = $self->_get_cell_lines(
         $self->{columns}[$i],            # text
         $self->{_draw}{fcol_widths}[$i], # width
         $self->{_draw}{header_height},   # height
         $align, $valign,                 # aligns
         $lpad, $rpad, $tpad, $bpad,      # paddings
         $fgcolor . $bgcolor);
+    #use Data::Dump; print "D:res: "; dd $res;
+    $res;
 }
 
 sub _get_data_cell_lines {
@@ -1193,8 +1203,9 @@ sub draw {
             my $ci = $self->_colnum($fcols->[$i]);
             push @b, 0, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 0, $i==@$fcols-1 ? 3:2, 1;
+            push @b, 0, 2, 1 if $i < @$fcols-1;
         }
+        push @b, 0, 3, 1;
         $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
@@ -1203,24 +1214,29 @@ sub draw {
     if ($self->{show_header}) {
         my %seen;
         my $hcell_lines = []; # index = [fcolnum]
-        for my $i (0..@$fcols-1) {
-            my $ci = $self->_colnum($fcols->[$i]);
-            if (defined($seen{$i})) {
-                $hcell_lines->[$i] = $hcell_lines->[$seen{$i}];
-            }
-            $seen{$i} = $ci;
-            $hcell_lines->[$i] = $self->_get_header_cell_lines($ci);
-        }
         if (@$fcols) {
-            for my $l (0..@{ $hcell_lines->[0] }-1) {
-                $self->draw_border_char(1, 0);
-                for my $i (0..@$fcols-1) {
-                    $self->draw_str($hcell_lines->[$i][$l]);
-                    $self->draw_color_reset;
-                    $self->draw_border_char(1, $i == @$fcols-1 ? 2:1);
+            for my $i (0..@$fcols-1) {
+                my $ci = $self->_colnum($fcols->[$i]);
+                if (defined($seen{$i})) {
+                    $hcell_lines->[$i] = $hcell_lines->[$seen{$i}];
                 }
-                $self->draw_str("\n");
+                $seen{$i} = $ci;
+                $hcell_lines->[$i] = $self->_get_header_cell_lines($ci);
             }
+        } else {
+            # so we can still draw header
+            $hcell_lines->[0] = [""];
+        }
+        #use Data::Dump; print "D:hcell_lines: "; dd $hcell_lines;
+        for my $l (0..@{ $hcell_lines->[0] }-1) {
+            $self->draw_border_char(1, 0);
+            for my $i (0..@$fcols-1) {
+                $self->draw_str($hcell_lines->[$i][$l]);
+                $self->draw_color_reset;
+                $self->draw_border_char(1, 1) unless $i == @$fcols-1;
+            }
+            $self->draw_border_char(1, 2);
+            $self->draw_str("\n");
         }
     }
 
@@ -1232,8 +1248,9 @@ sub draw {
             my $ci = $self->_colnum($fcols->[$i]);
             push @b, 2, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 2, $i==@$fcols-1 ? 3:2, 1;
+            push @b, 2, 2, 1 unless $i==@$fcols-1;
         }
+        push @b, 2, 3, 1;
         $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
@@ -1241,28 +1258,33 @@ sub draw {
     # draw data rows
     {
         for my $r (0..@$frows-1) {
+            #$self->draw_str("r$r");
             my $dcell_lines = []; # index = [fcolnum]
             my %seen;
-            for my $i (0..@$fcols-1) {
-                my $ci = $self->_colnum($fcols->[$i]);
-                if (defined($seen{$i})) {
-                    $dcell_lines->[$i] = $dcell_lines->[$seen{$i}];
-                }
-                $seen{$i} = $ci;
-                $dcell_lines->[$i] = $self->_get_data_cell_lines($r, $ci);
-            }
-
             if (@$fcols) {
-                for my $l (0..@{ $dcell_lines->[0] }-1) {
-                    $self->draw_border_char({row_num=>$r}, 3, 0);
-                    for my $i (0..@$fcols-1) {
-                        $self->draw_str($dcell_lines->[$i][$l]);
-                        $self->draw_color_reset;
-                        $self->draw_border_char({row_num=>$r},
-                                                3, $i == @$fcols-1 ? 2:1);
+                for my $i (0..@$fcols-1) {
+                    my $ci = $self->_colnum($fcols->[$i]);
+                    if (defined($seen{$i})) {
+                        $dcell_lines->[$i] = $dcell_lines->[$seen{$i}];
                     }
-                    $self->draw_str("\n");
+                    $seen{$i} = $ci;
+                    $dcell_lines->[$i] = $self->_get_data_cell_lines($r, $ci);
                 }
+            } else {
+                # so we can still print row
+                $dcell_lines->[0] = [" "];
+            }
+            #use Data::Dump; print "TMP: dcell_lines: "; dd $dcell_lines;
+            for my $l (0..@{ $dcell_lines->[0] }-1) {
+                $self->draw_border_char({row_num=>$r}, 3, 0);
+                for my $i (0..@$fcols-1) {
+                    $self->draw_str($dcell_lines->[$i][$l]);
+                    $self->draw_color_reset;
+                    $self->draw_border_char({row_num=>$r}, 3, 1)
+                        unless $i == @$fcols-1;
+                }
+                $self->draw_border_char({row_num=>$r}, 3, 2);
+                $self->draw_str("\n");
             }
 
             # draw separators between row
@@ -1291,8 +1313,9 @@ sub draw {
             my $ci = $self->_colnum($fcols->[$i]);
             push @b, 5, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 5, $i==@$fcols-1 ? 3:2, 1;
+            push @b, 5, 2, 1 unless $i == @$fcols-1;
         }
+        push @b, 5, 3, 1;
         $self->draw_border_char(@b);
         $self->draw_str("\n");
     }
