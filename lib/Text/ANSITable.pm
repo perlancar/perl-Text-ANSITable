@@ -1416,7 +1416,7 @@ can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
 To choose a color theme, either set the C<color_theme> attribute to an available
-color theme or a border specification directly.
+color theme or a color theme specification directly.
 
  $t->color_theme("Default::default_nogradation");
  $t->color_theme("Foo::bar");    # dies, no such color theme
