@@ -1,5 +1,11 @@
 Revision history for Text-ANSITable
 
+0.25    2014-01-23 (SHARYANTO)
+
+        - Tweak default: only default to utf8 border if PerlIO layer 'utf8' has
+          been set, to avoid 'Wide character in print' warning.
+
+
 0.24    2013-11-09 (SHARYANTO)
 
         - No functional changes.
