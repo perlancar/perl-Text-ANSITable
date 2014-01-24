@@ -1326,7 +1326,7 @@ sub draw {
 }
 
 1;
-#ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
+#ABSTRACT: Create nice formatted tables using extended ASCII and ANSI colors
 
 =for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
