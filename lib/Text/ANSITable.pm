@@ -185,9 +185,11 @@ sub BUILD {
 
         # we only default to utf8 border if user has set something like
         # binmode(STDOUT, ":utf8") to avoid 'Wide character in print' warning.
-        require PerlIO;
-        my @layers = PerlIO::get_layers(STDOUT);
-        $use_utf8 = 0 unless 'utf8' ~~ @layers;
+        unless (defined $ENV{UTF8}) {
+            require PerlIO;
+            my @layers = PerlIO::get_layers(STDOUT);
+            $use_utf8 = 0 unless 'utf8' ~~ @layers;
+        }
 
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
