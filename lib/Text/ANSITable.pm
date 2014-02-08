@@ -2215,6 +2215,12 @@ whatsoever:
    row2
    row3
 
+=head3 I want to separate each row with a line!
+
+Set C<show_row_separator> to 1, or alternatively, set
+C<ANSITABLE_STYLE='{"show_row_separator":1}>.
+
+
 =head2 Color
 
 =head3 How to disable colors?
