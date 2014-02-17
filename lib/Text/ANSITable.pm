@@ -501,6 +501,7 @@ sub _read_style_envs {
 sub _opt_calc_width_height {
     my ($self, $frow_num, $col, $text) = @_;
 
+    #say "D:_opt_calc_width_height(", $frow_num//"undef", ", $col) [caller=".(caller(1))[3]."]";
     $col = $self->_colnum($col);
     my $setw  = $self->{_draw}{fcol_setwidths}[$col];
     my $calcw = !defined($setw) || $setw < 0;
@@ -893,6 +894,8 @@ sub _prepare_draw {
                 next unless $cols->[$j] ~~ $fcols;
                 next if $seen{$cols->[$j]}++;
 
+                my $oldcellv = $frows->[$i][$j] // "";
+
                 # apply cell-level formats
                 my $fmts = $self->get_cell_style($i, $j, 'formats');
                 if (defined $fmts) {
@@ -906,9 +909,10 @@ sub _prepare_draw {
                     $frows->[$i][$j] = $res->[2][0] // "";
                 }
 
-                # calculate heights/widths of data
-                my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
+                # recalculate heights/widths of data if necessary
+                next unless $frows->[$i][$j] ne $oldcellv;
 
+                my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
                 $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
                 $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
                     || $frow_heights->[$i] < $wh->[1];
