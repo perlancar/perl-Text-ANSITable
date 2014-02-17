@@ -976,7 +976,9 @@ sub draw_border_char {
     $self->draw_str($self->{_draw}{set_line_draw_mode});
     while (my ($y, $x, $n) = splice @_, 0, 3) {
         $n //= 1;
-        if ($args) {
+        if (!$self->{use_color}) {
+            # save some CPU cycles
+        } elsif ($args) {
             $self->draw_theme_color('border',
                                     {border=>[$y, $x, $n], %$args});
         } else {
