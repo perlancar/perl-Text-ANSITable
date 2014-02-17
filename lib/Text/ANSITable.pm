@@ -233,9 +233,6 @@ sub BUILD {
     }
 }
 
-sub __wrap {
-}
-
 sub add_row {
     my ($self, $row, $styles) = @_;
     die "Row must be arrayref" unless ref($row) eq 'ARRAY';
@@ -512,7 +509,6 @@ sub _read_style_envs {
 sub _opt_calc_width_height {
     my ($self, $frow_num, $col, $text) = @_;
 
-    #say "D:_opt_calc_width_height(", $frow_num//"undef", ", $col) [caller=".(caller(1))[3]."]";
     $col = $self->_colnum($col);
     my $setw  = $self->{_draw}{fcol_setwidths}[$col];
     my $calcw = !defined($setw) || $setw < 0;
@@ -533,6 +529,7 @@ sub _opt_calc_width_height {
     } else {
         $wh = [$setw, $seth];
     }
+    #say "D:_opt_calc_width_height(", $frow_num//"undef", ", $col) = $wh->[0], $wh->[1]";
     $wh;
 }
 
@@ -1274,13 +1271,14 @@ sub _get_data_cell_lines {
     my $bpad = $self->{_draw}{frow_bpads}[$y];
 
     #say "D:oy=$oy, y=$y, x=$x, fgcolor=$fgcolor, bgcolor=$bgcolor";
-    $self->_get_cell_lines(
+    my $res = $self->_get_cell_lines(
         $cell,                            # text
         $self->{_draw}{fcol_widths}[$x],  # width
         $self->{_draw}{frow_heights}[$y], # height
         $align, $valign,                  # aligns
         $lpad, $rpad, $tpad, $bpad,       # paddings
         $fgcolor . $bgcolor);
+    $res;
 }
 
 sub draw {
