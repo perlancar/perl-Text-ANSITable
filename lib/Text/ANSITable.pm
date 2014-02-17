@@ -986,8 +986,6 @@ sub _prepare_draw {
                 next unless $cols->[$j] ~~ $fcols;
                 next if $seen{$cols->[$j]}++;
 
-                my $oldcellv = $frows->[$i][$j] // "";
-
                 # apply cell-level formats
                 my $fmts = $self->get_cell_style($i, $j, 'formats');
                 if (defined $fmts) {
@@ -1001,10 +999,9 @@ sub _prepare_draw {
                     $frows->[$i][$j] = $res->[2][0] // "";
                 }
 
-                # recalculate heights/widths of data if necessary
-                next unless $frows->[$i][$j] ne $oldcellv;
-
+                # calculate heights/widths of data
                 my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
+
                 $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
                 $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
                     || $frow_heights->[$i] < $wh->[1];
