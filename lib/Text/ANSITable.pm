@@ -1628,11 +1628,11 @@ order of precedence, from lowest):
 
 =over
 
-=item * table-level C<row_vpad> attribute
+=item * table-level C<cell_vpad> attribute
 
 This sets top and bottom padding for all rows.
 
-=item * table-level C<row_tpad>/C<row_bpad> attributes
+=item * table-level C<cell_tpad>/C<cell_bpad> attributes
 
 They set top/bottom padding separately for all rows.
 
