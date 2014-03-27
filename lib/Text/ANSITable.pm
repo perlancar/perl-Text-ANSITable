@@ -385,7 +385,7 @@ sub _detect_column_types {
       DETECT:
         {
             last DETECT if $type;
-            if ($col =~ /^(can|is|has|does)\b|\?$/) {
+            if ($col =~ /^(can|is|has|does)_|\?$/) {
                 $type = 'bool';
                 last DETECT;
             }
