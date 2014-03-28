@@ -2242,7 +2242,7 @@ Other color themes might use different colors.
 For example, you have a column named C<deleted> but want to display it as
 B<bool>. You can do:
 
- $t->set_column_type(deleted => type => 'bool');
+ $t->set_column_style(deleted => type => 'bool');
 
 =head3 How do I wrap long text?
 
