@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.27    2014-03-28 (SHARYANTO)
+
+        - Bugfix: don't override UTF8 env when setting default of use_utf8.
+
+        - Add some minor optimizations.
+
+        - Add more heuristics for detecting bool columns
+          ({can,is,has,does}_foo).
+
+
 0.26    2014-01-23 (SHARYANTO)
 
         - Allow drawing table with no columns.
