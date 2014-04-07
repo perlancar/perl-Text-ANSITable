@@ -4,8 +4,8 @@ use 5.010;
 use strict;
 use warnings;
 
-use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
+use SHARYANTO::MaybeXS;
 
 # VERSION
 
@@ -78,7 +78,7 @@ _
 );
 
 {
-    my $ct = clone($color_themes{default_gradation});
+    my $ct = SHARYANTO::MaybeXS::clone($color_themes{default_gradation});
     $ct->{summary} = 'Default (for terminal with white background)';
     $ct->{colors}{header_bg} = 'cccccc';
     $ct->{data}{default_border1} = '000000';
@@ -94,14 +94,14 @@ _
 
 
 {
-    my $ct = clone($color_themes{default_gradation});
+    my $ct = SHARYANTO::MaybeXS::clone($color_themes{default_gradation});
     $ct->{colors}{border} = '666666';
     delete $ct->{description};
     $color_themes{default_nogradation} = $ct;
 }
 
 {
-    my $ct = clone($color_themes{default_gradation_whitebg});
+    my $ct = SHARYANTO::MaybeXS::clone($color_themes{default_gradation_whitebg});
     $ct->{colors}{border} = '666666';
     delete $ct->{description};
     $color_themes{default_nogradation_whitebg} = $ct;
