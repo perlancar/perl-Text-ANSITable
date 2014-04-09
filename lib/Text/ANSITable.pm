@@ -2388,8 +2388,11 @@ For collections of color themes, search for C<Text::ANSITable::ColorTheme::*>
 modules.
 
 Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
-L<Text::ASCIITable> (which I usually used), L<Text::UnicodeTable::Simple>,
-L<Table::Simple> (uses Moose).
+L<Text::ASCIITable>, L<Text::UnicodeTable::Simple>, L<Table::Simple> (uses
+Moose). There are a couple of "extensions" for Text::ASCIITable:
+L<Text::ASCIITable::TW>, L<Text::ASCIITable::Wrap>; Text::ANSITable can be an
+alternative for all those modules since it can already handle wide-characters,
+multiline text in cells.
 
 Modules used: L<Text::ANSI::Util>, L<Color::ANSI::Util>.
 
