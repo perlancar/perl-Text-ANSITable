@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.28    2014-04-10 (SHARYANTO)
+
+        - No functional changes.
+
+        - Replace Data::Clone with Function::Fallback::CoreOrPP.
+
+
 0.27    2014-03-28 (SHARYANTO)
 
         - Bugfix: don't override UTF8 env when setting default of use_utf8.
