@@ -2181,6 +2181,26 @@ e.g.:
 
 See L<Data::Unixish::bool> for more details.
 
+=head3 How do I do conditional cell formatting?
+
+For example, if the cell contains the string "Cuti", you want to color the cell
+yellow. Otherwise, you want to color the cell red. You can use the C<formats>
+column style with the L<Data::Unixish::cond> function:
+
+ $t->set_column_style($colname, formats => [
+     [cond => {
+         if   => '$_ =~ /Cuti/',
+         then => ["ansi::color", {color=>"yellow"}],
+         else => ["ansi::color", {color=>"red"}],
+     }]
+ ]);
+
+Or from the command-line (assuming the column you want to format is called
+C<ind_name>):
+
+ % ANSITABLE_COLUMN_STYLES='{"ind_name":{"formats":[["cond",{"if":"$_ =~ /Cuti/", "then":["ansi::color",{"color":"red"}], "else":["ansi::color",{"color":"green"}]}]]}}' program-that-outputs-ansitable ...
+
+
 =head2 Border
 
 =head3 How to hide borders?
