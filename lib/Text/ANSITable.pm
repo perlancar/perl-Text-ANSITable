@@ -70,6 +70,10 @@ has show_header => (
     is      => 'rw',
     default => sub { 1 },
 );
+has eval_cond => (
+    is      => 'rw',
+    default => sub { 0 },
+);
 
 has _column_styles => ( # store per-column styles
     is      => 'rw',
@@ -80,6 +84,22 @@ has _row_styles => ( # store per-row styles
     default => sub { [] },
 );
 has _cell_styles => ( # store per-cell styles
+    is      => 'rw',
+    default => sub { [] },
+);
+
+# each element of _cond_*styles is a two-element [$cond, ], where $cond is code
+# (str|coderef) and the second element is a hashref containing styles.
+
+has _cond_column_styles => ( # store conditional column styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _cond_row_styles => ( # store conditional row styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _cond_cell_styles => ( # store conditional cell styles
     is      => 'rw',
     default => sub { [] },
 );
@@ -1472,6 +1492,14 @@ lowest):
 
 This sets width for all columns.
 
+=item * conditional column styles
+
+The example below sets column width to 10 for columns whose names matching
+C</[acm]time/>, else sets the column width to 20.
+
+ $t->add_cond_column_style(sub {  /[acm]time/ }, width => 10);
+ $t->add_cond_column_style(sub { !/[acm]time/ }, width => 20);
+
 =item * per-column C<width> style
 
  $t->set_column_style('colname', width => 20);
@@ -1491,6 +1519,13 @@ lowest):
 =item * table-level C<cell_height> attribute
 
 This sets height for all rows.
+
+=item * conditional row styles
+
+The example below sets row height to 2 for every odd rows, and 1 for even rows.
+
+ $t->add_cond_row_style(sub { $_ % 2 == 0 }, height => 2);
+ $t->add_cond_row_style(sub { $_ % 2      }, height => 1);
 
 =item * per-row C<height> style
 
@@ -1515,6 +1550,14 @@ This sets left and right padding for all columns.
 =item * table-level C<cell_lpad> and C<cell_rpad> attributes
 
 They set left and right padding for all columns, respectively.
+
+=item * conditional column C<pad> style
+
+ $t->add_cond_column_style($cond, pad => 0);
+
+=item * conditional column C<lpad>/C<rpad> style
+
+ $t->add_cond_column_style($cond, lpad => 1, rpad => 2);
 
 =item * per-column C<pad> style
 
@@ -1542,6 +1585,12 @@ This sets top and bottom padding for all rows.
 =item * table-level C<cell_tpad>/C<cell_bpad> attributes
 
 They set top/bottom padding separately for all rows.
+
+=item * conditional row C<vpad> style
+
+Example:
+
+ $t->add_cond_row_style($cond, vpad => 1);
 
 =item * per-row C<vpad> style
 
@@ -1584,12 +1633,24 @@ will be converted to the appropriate terminal color.
 Can also be set to a coderef which will receive ($rownum, $colname) and should
 return an RGB color.
 
+=item * conditional column C<fgcolor> and C<bgcolor> style
+
+Example:
+
+ $t->add_cond_column_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
+
 =item * per-column C<fgcolor> and C<bgcolor> styles
 
 Example:
 
  $t->set_column_style('colname', fgcolor => 'fa8888');
  $t->set_column_style('colname', bgcolor => '202020');
+
+=item * conditional row C<fgcolor> and C<bgcolor> style
+
+Example:
+
+ $t->add_cond_row_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
 
 =item * per-row C<fgcolor> and C<bgcolor> styles
 
@@ -1601,6 +1662,10 @@ When adding row/rows:
 
  $t->add_row($row, {fgcolor=>..., bgcolor=>...});
  $t->add_rows($rows, {bgcolor=>...});
+
+=item * conditional cell C<fgcolor> and C<bgcolor> style
+
+ $t->add_cond_cell_style($cond, fgcolor=>..., bgcolor=>...);
 
 =item * per-cell C<fgcolor> and C<bgcolor> styles
 
@@ -1626,6 +1691,10 @@ lowest):
 
 =item * table-level C<cell_align> and C<cell_valign> attribute
 
+=item * conditional column C<align> and <valign> styles
+
+ $t->add_cond_column_style($cond, align=>..., valign=>...);
+
 =item * per-column C<align> and C<valign> styles
 
 Example:
@@ -1633,7 +1702,15 @@ Example:
  $t->set_column_style($colname, align  => 'middle'); # or left, or right
  $t->set_column_style($colname, valign => 'top');    # or bottom, or middle
 
+=item * conditional row C<align> and <valign> styles
+
+ $t->add_cond_row_style($cond, align=>..., valign=>...);
+
 =item * per-row C<align> and C<valign> styles
+
+=item * conditional cell C<align> and <valign> styles
+
+ $t->add_cond_cell_style($cond, align=>..., valign=>...);
 
 =item * per-cell C<align> and C<valign> styles
 
@@ -1652,7 +1729,35 @@ C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
 functions are available. Functions of interest to formatting data include:
-C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, (among others).
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ansi::*> (in
+L<Data::Unixish::ansi>), (among others).
+
+
+=head1 CONDITIONAL STYLES
+
+As an alternative to setting styles for specific {column,row,cell}, you can also
+create conditional styles. You specify a Perl code for the condition, then if
+the condition evaluates to true, the corresponding styles are applied. There are
+conditional styles for columns, rows, and cells.
+
+To add a conditional style, use the C<add_cond_{column,row,cell}_style> methods.
+These methods accept condition code as its first argument and one or more styles
+in the subsequent argument(s). For example:
+
+ $t->add_cond_row_style(sub { $_ % 2 }, bgcolor=>'202020');
+
+The above example will set row bgcolor for odd rows. You can add more
+conditional styles:
+
+ $t->add_cond_row_style(sub { $_ % 2 == 0 }, bgcolor=>'404040');
+
+All the conditions will be evaluated and the applicable styles will be merged
+together. For example, if we add a third conditional row style:
+
+ $t->add_cond_row_style(sub { $_ % 10 == 0 }, height=>2, fgcolor=>'ffff00');
+
+then every tenth row will have its height set to 2, fgcolor set to ffff00, and
+bgcolor set to 404040 (from the second conditional).
 
 
 =head1 ATTRIBUTES
@@ -1771,6 +1876,16 @@ When drawing, whether to show separator lines between rows. The default (2) is
 to only show separators drawn using C<add_row_separator()>. If you set this to
 1, lines will be drawn after every data row. If you set this attribute to 0, no
 lines will be drawn whatsoever.
+
+=head2 eval_cond => BOOL (default: 0)
+
+If set to true, will accept string condition in conditional {column,row,cell}
+styles and eval it as Perl code, allowing us to specify conditional styles in
+the command-line via environment variable
+C<ANSITABLE_COND_{COLUMN,ROW,CELL}_STYLES>. For security, by default this option
+is off.
+
+See L<"/CONDITIONAL STYLES"> for more information on conditional styles.
 
 =head2 cell_width => INT
 
@@ -1912,6 +2027,11 @@ Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
 C<fgcolor>, C<bgcolor>, C<type>, C<wrap>.
 
+=head2 $t->get_cond_column_styles => ARRAY
+
+Return conditional column styles. This is an alternative to setting per-column
+style. See
+
 =head2 $t->get_row_style($row_num) => VAL
 
 Get per-row style for row numbered C<$row_num>.
@@ -1975,6 +2095,16 @@ of C<< attr => val >> pairs. Example:
 
 will display table with row separator lines after every row.
 
+=head2 ANSITABLE_COND_COLUMN_STYLES => JSON
+
+Can be used to set conditional column styles. It should be an array of 2-element
+arrays. For each 2-element array, the first element is a string Perl code and
+the second a hashref of styles. Example:
+
+ % ANSITABLE_COND_COLUMN_STYLES='[ ["$_ eq q(name) || $_ eq q(address)", {"width":20}], ["$_ =~ /[acm]time/", {"width":10}] ]'
+
+This environment is only observed when C<eval_cond> is set to true.
+
 =head2 ANSITABLE_COLUMN_STYLES => JSON
 
 Can be used to set per-column styles. Interpreted right before draw(). Value
@@ -1985,6 +2115,16 @@ Example:
 
 will display the bool columns as num and str instead.
 
+=head2 ANSITABLE_COND_ROW_STYLES => JSON
+
+Can be used to set conditional row styles. It should be an array of 2-element
+arrays. For each 2-element array, the first element is a string Perl code and
+the second a hashref of styles. Example:
+
+ % ANSITABLE_COND_ROW_STYLES='[ ["$_ % 2 == 0", {"height":2}], ["$_ % 2 == 1", {"height":1}] ]'
+
+This environment is only observed when C<eval_cond> is set to true.
+
 =head2 ANSITABLE_ROW_STYLES => JSON
 
 Can be used to set per-row styles. Interpreted right before draw(). Value should
@@ -1994,6 +2134,16 @@ Example:
  % ANSITABLE_ROW_STYLES='{"0":{"bgcolor":"000080","vpad":1}}' ansitable-list-border-styles
 
 will display the first row with blue background color and taller height.
+
+=head2 ANSITABLE_COND_CELL_STYLES => JSON
+
+Can be used to set conditional cell styles. It should be an array of 2-element
+arrays. For each 2-element array, the first element is a string Perl code and
+the second a hashref of styles. Example:
+
+ % ANSITABLE_COND_CELL_STYLES='[ ["my %args = @_; $args{value} < 0 ? {bgcolor=>q(ff0000)} : 0", {}] ]'
+
+This environment is only observed when C<eval_cond> is set to true.
 
 =head2 ANSITABLE_CELL_STYLES => JSON
 
