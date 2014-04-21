@@ -1,10 +1,19 @@
 Revision history for Text-ANSITable
 
+0.29    2014-04-21 (SHARYANTO) (not yet released)
+
+        - Add conditional styles.
+
+        - Revert another optimization because it was buggy.
+
+
 0.28    2014-04-10 (SHARYANTO)
 
         - No functional changes.
 
         - Replace Data::Clone with Function::Fallback::CoreOrPP.
+
+        - Revert an optimization because it was buggy.
 
 
 0.27    2014-03-28 (SHARYANTO)
