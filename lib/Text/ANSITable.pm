@@ -70,10 +70,6 @@ has show_header => (
     is      => 'rw',
     default => sub { 1 },
 );
-has eval_string_cond => (
-    is      => 'rw',
-    default => sub { 0 },
-);
 
 has _column_styles => ( # store per-column styles
     is      => 'rw',
@@ -171,7 +167,20 @@ with 'SHARYANTO::Role::BorderStyle';
 sub BUILD {
     my ($self, $args) = @_;
 
-    # read ANSITABLE_STYLE env
+    if ($ENV{ANSITABLE_STYLE_SETS}) {
+        require JSON;
+        my $sets = JSON::decode_json($ENV{ANSITABLE_STYLE_SETS});
+        die "ANSITABLE_STYLE_SETS must be an array"
+            unless ref($sets) eq 'ARRAY';
+        for my $set (@$sets) {
+            if (ref($set) eq 'ARRAY') {
+                $self->apply_style_set($set->[0], $set->[1]);
+            } else {
+                $self->apply_style_set($set);
+            }
+        }
+    }
+
     if ($ENV{ANSITABLE_STYLE}) {
         require JSON;
         my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
@@ -342,13 +351,7 @@ sub add_cond_column_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        if ($self->{eval_string_cond}) {
-            $cond = eval $cond;
-            die if $@;
-        } else {
-            die "Please supply coderef as conditional, or set eval_string_cond to ".
-                "true if you want to be able to pass string Perl code";
-        }
+        die "cond must be a coderef";
     }
 
     my $styles;
@@ -446,13 +449,7 @@ sub add_cond_row_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        if ($self->{eval_string_cond}) {
-            $cond = eval $cond;
-            die if $@;
-        } else {
-            die "Please supply coderef as conditional, or set eval_string_cond to ".
-                "true if you want to be able to pass string Perl code";
-        }
+        die "cond must be a coderef";
     }
 
     my $styles;
@@ -550,13 +547,7 @@ sub add_cond_cell_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        if ($self->{eval_string_cond}) {
-            $cond = eval $cond;
-            die if $@;
-        } else {
-            die "Please supply coderef as conditional, or set eval_string_cond to ".
-                "true if you want to be able to pass string Perl code";
-        }
+        die "cond must be a coderef";
     }
 
     my $styles;
@@ -619,6 +610,21 @@ sub get_eff_cell_style {
     $styles{$style};
 }
 
+sub apply_style_set {
+    my $self = shift;
+    my $name = shift;
+    $name =~ /\A[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*\z/
+        or die "Invalid style set name, please use alphanums only";
+    {
+        my $name = $name;
+        $name =~ s!::!/!g;
+        require "Text/ANSITable/StyleSet/$name.pm";
+    }
+    my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
+    my $obj = "Text::ANSITable::StyleSet::$name"->new(%args);
+    $obj->apply($self);
+}
+
 # read environment variables for style, this will only be done once per object
 sub _read_style_envs {
     my $self = shift;
@@ -644,29 +650,6 @@ sub _read_style_envs {
         }
     }
 
-    if ($ENV{ANSITABLE_COND_COLUMN_STYLES}) {
-        if ($self->{eval_string_cond}) {
-            require JSON;
-            my $ss = JSON::decode_json($ENV{ANSITABLE_COND_COLUMN_STYLES});
-            die "ANSITABLE_COND_COLUMN_STYLES must be an array"
-                unless ref($ss) eq 'ARRAY';
-            for my $e (@$ss) {
-                $e->[0] = eval $e->[0];
-                die if $@;
-                for my $k (keys %{$e->[1]}) {
-                    die "Unknown column style '$k' in ".
-                        "ANSITABLE_COND_COLUMN_STYLES environment, ".
-                            "please use one of [".join(", ",@$COLUMN_STYLES)."]"
-                                unless $k ~~ $COLUMN_STYLES;
-                }
-            }
-            $self->{_cond_column_styles} = $ss;
-        } else {
-            warn "ANSITABLE_COND_COLUMN_STYLES is ignored because ".
-                "eval_string_cond is set to false";
-        }
-    }
-
     if ($ENV{ANSITABLE_ROW_STYLES}) {
         require JSON;
         my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
@@ -682,29 +665,6 @@ sub _read_style_envs {
                         unless $k ~~ $ROW_STYLES;
                 $self->{_row_styles}[$row]{$k} //= $v;
             }
-        }
-    }
-
-    if ($ENV{ANSITABLE_COND_ROW_STYLES}) {
-        if ($self->{eval_string_cond}) {
-            require JSON;
-            my $ss = JSON::decode_json($ENV{ANSITABLE_COND_ROW_STYLES});
-            die "ANSITABLE_COND_ROW_STYLES must be an array"
-                unless ref($ss) eq 'ARRAY';
-            for my $e (@$ss) {
-                $e->[0] = eval $e->[0];
-                die if $@;
-                for my $k (keys %{$e->[1]}) {
-                    die "Unknown row style '$k' in ".
-                        "ANSITABLE_COND_ROW_STYLES environment, ".
-                            "please use one of [".join(", ", @$ROW_STYLES)."]"
-                                unless $k ~~ $ROW_STYLES;
-                }
-            }
-            $self->{_cond_row_styles} = $ss;
-        } else {
-            warn "ANSITABLE_COND_ROW_STYLES is ignored because ".
-                "eval_string_cond is set to false";
         }
     }
 
@@ -729,29 +689,6 @@ sub _read_style_envs {
                         unless $k ~~ $CELL_STYLES;
                 $self->{_cell_styles}[$row][$ci]{$k} //= $v;
             }
-        }
-    }
-
-    if ($ENV{ANSITABLE_COND_CELL_STYLES}) {
-        if ($self->{eval_string_cond}) {
-            require JSON;
-            my $ss = JSON::decode_json($ENV{ANSITABLE_COND_CELL_STYLES});
-            die "ANSITABLE_COND_CELL_STYLES must be an array"
-                unless ref($ss) eq 'ARRAY';
-            for my $e (@$ss) {
-                $e->[0] = eval $e->[0];
-                die if $@;
-                for my $k (keys %{$e->[1]}) {
-                    die "Unknown cell style '$k' in ".
-                        "ANSITABLE_COND_CELL_STYLES environment, ".
-                            "please use one of [".join(", ", @$CELL_STYLES)."]"
-                                unless $k ~~ $CELL_STYLES;
-                }
-            }
-            $self->{_cond_cell_styles} = $ss;
-        } else {
-            warn "ANSITABLE_COND_CELL_STYLES is ignored because ".
-                "eval_string_cond is set to false";
         }
     }
 }
@@ -2073,6 +2010,43 @@ particular column/row/cell. When returning a true value, coderef can also return
 a hashref to return additional styles that will be merged/applied too.
 
 
+=head1 STYLE SETS
+
+A style set is just a collection of style settings that can be applied. More
+than one style sets can be applied. For example, the
+L<Text::ANSITable::StyleSet::AltRow> style set defines this:
+
+ has odd_bgcolor  => (is => 'rw');
+ has even_bgcolor => (is => 'rw');
+ has odd_fgcolor  => (is => 'rw');
+ has even_fgcolor => (is => 'rw');
+
+ sub apply {
+     my ($self, $table) = @_;
+
+     $table->add_cond_row_style(sub {
+         my ($t, %args) = @_;
+         my %styles;
+         if ($_ % 2) {
+             $styles{bgcolor}=$self->odd_bgcolor if defined $self->odd_bgcolor;
+             $styles{fgcolor}=$self->odd_fgcolor if defined $self->odd_bgcolor;
+         } else {
+             $styles{bgcolor} = $self->even_bgcolor if defined $self->even_bgcolor;
+             $styles{fgcolor} = $self->even_fgcolor if defined $self->even_bgcolor;
+         }
+         \%styles;
+     });
+ }
+
+To apply this style set:
+
+ $t->apply_style_set("AltRow", odd_bgcolor=>"003300", even_bgcolor=>"000000");
+
+To create a new style set, create a module under C<Text::ANSITable::StyleSet::>
+like the above example. Please see the other existing style set modules for more
+examples.
+
+
 =head1 ATTRIBUTES
 
 =head2 columns => ARRAY OF STR
@@ -2189,16 +2163,6 @@ When drawing, whether to show separator lines between rows. The default (2) is
 to only show separators drawn using C<add_row_separator()>. If you set this to
 1, lines will be drawn after every data row. If you set this attribute to 0, no
 lines will be drawn whatsoever.
-
-=head2 eval_string_cond => BOOL (default: 0)
-
-If set to true, will accept string condition in conditional {column,row,cell}
-styles and eval it as Perl code, allowing us to specify conditional styles in
-the command-line via environment variable
-C<ANSITABLE_COND_{COLUMN,ROW,CELL}_STYLES>. For security, by default this option
-is off.
-
-See L<"/CONDITIONAL STYLES"> for more information on conditional styles.
 
 =head2 cell_width => INT
 
@@ -2456,16 +2420,6 @@ of C<< attr => val >> pairs. Example:
 
 will display table with row separator lines after every row.
 
-=head2 ANSITABLE_COND_COLUMN_STYLES => JSON
-
-Can be used to set conditional column styles. It should be an array of 2-element
-arrays. For each 2-element array, the first element is a string Perl code and
-the second a hashref of styles. Example:
-
- % ANSITABLE_COND_COLUMN_STYLES='[ ["$_ eq q(name) || $_ eq q(address)", {"width":20}], ["$_ =~ /[acm]time/", {"width":10}] ]'
-
-This environment is only observed when C<eval_string_cond> is set to true.
-
 =head2 ANSITABLE_COLUMN_STYLES => JSON
 
 Can be used to set per-column styles. Interpreted right before draw(). Value
@@ -2475,16 +2429,6 @@ Example:
  % ANSITABLE_COLUMN_STYLES='{"2":{"type":"num"},"3":{"type":"str"}}' ansitable-list-border-styles
 
 will display the bool columns as num and str instead.
-
-=head2 ANSITABLE_COND_ROW_STYLES => JSON
-
-Can be used to set conditional row styles. It should be an array of 2-element
-arrays. For each 2-element array, the first element is a string Perl code and
-the second a hashref of styles. Example:
-
- % ANSITABLE_COND_ROW_STYLES='[ ["$_ % 2 == 0", {"height":2}], ["$_ % 2 == 1", {"height":1}] ]'
-
-This environment is only observed when C<eval_string_cond> is set to true.
 
 =head2 ANSITABLE_ROW_STYLES => JSON
 
@@ -2496,16 +2440,6 @@ Example:
 
 will display the first row with blue background color and taller height.
 
-=head2 ANSITABLE_COND_CELL_STYLES => JSON
-
-Can be used to set conditional cell styles. It should be an array of 2-element
-arrays. For each 2-element array, the first element is a string Perl code and
-the second a hashref of styles. Example:
-
- % ANSITABLE_COND_CELL_STYLES='[ ["my %args = @_; $args{value} < 0", {"bgcolor":"ff0000"}] ]'
-
-This environment is only observed when C<eval_string_cond> is set to true.
-
 =head2 ANSITABLE_CELL_STYLES => JSON
 
 Can be used to set per-cell styles. Interpreted right before draw(). Value
@@ -2516,6 +2450,16 @@ pairs. Example:
 
 will display the second-on-the-left, second-on-the-top cell with green
 background color.
+
+=head2 ANSITABLE_STYLE_SETS => JSON
+
+Can be used to apply style sets. Value should be a JSON-encoded array. Each
+element must be a style set name or a 2-element array containing style set name
+and its arguments (C<< [$name, \%args] >>). Example:
+
+ % ANSITABLE_STYLE_SETS='[["AltRow",{"odd_bgcolor":"003300"}]]'
+
+will display table with row separator lines after every row.
 
 
 =head1 FAQ
