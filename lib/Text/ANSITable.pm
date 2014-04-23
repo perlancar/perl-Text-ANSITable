@@ -911,7 +911,7 @@ sub _detect_column_types {
             }
         } else {
             $res->{fgcolor} = $ct->{colors}{str_data};
-            $res->{wrap}    = 1;
+            $res->{wrap}    = $ENV{WRAP} // 1;
         }
     }
 
@@ -2478,6 +2478,10 @@ of C<< attr => val >> pairs. Example:
  % ANSITABLE_STYLE='{"show_row_separator":1}' ansitable-list-border-styles
 
 will display table with row separator lines after every row.
+
+=head2 WRAP => BOOL
+
+Can be used to set default value for the C<wrap> column style.
 
 =head2 ANSITABLE_COLUMN_STYLES => JSON
 
