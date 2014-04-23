@@ -2466,7 +2466,7 @@ will display table with row separator lines after every row.
 
 =head2 General
 
-=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be copy-pasted to my document.
 
  $t->use_utf8(0);
  $t->use_box_chars(0);
