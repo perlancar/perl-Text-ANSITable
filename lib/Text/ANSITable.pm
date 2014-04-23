@@ -625,6 +625,42 @@ sub apply_style_set {
     $obj->apply($self);
 }
 
+sub list_style_sets {
+    require Module::List;
+    require Module::Load;
+    require SHARYANTO::Package::Util;
+
+    my ($self, $detail) = @_;
+
+    my $prefix = (ref($self) ? ref($self) : $self ) .
+        '::StyleSet'; # XXX allow override
+    my $all_sets = $self->{_all_style_sets};
+
+    if (!$all_sets) {
+        my $mods = Module::List::list_modules("$prefix\::",
+                                              {list_modules=>1});
+        $all_sets = {};
+        for my $mod (sort keys %$mods) {
+            #$log->tracef("Loading style set module '%s' ...", $mod);
+            Module::Load::load($mod);
+            my $name = $mod; $name =~ s/\A\Q$prefix\:://;
+            my $summary = $mod->summary;
+            # we don't have meta, so dig it ourselves
+            my %ct = SHARYANTO::Package::Util::list_package_contents($mod);
+            my $args = [sort grep {!/\W/ && !/\A(new|summary|apply)\z/}
+                            keys %ct];
+            $all_sets->{$name} = {name=>$name, summary=>$summary, args=>$args};
+        }
+        $self->{_all_style_sets} = $all_sets;
+    }
+
+    if ($detail) {
+        return $all_sets;
+    } else {
+        return sort keys %$all_sets;
+    }
+}
+
 # read environment variables for style, this will only be done once per object
 sub _read_style_envs {
     my $self = shift;

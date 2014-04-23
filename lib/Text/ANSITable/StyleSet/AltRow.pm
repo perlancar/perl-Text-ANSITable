@@ -2,11 +2,16 @@ package Text::ANSITable::StyleSet::AltRow;
 
 use 5.010;
 use Moo;
+use namespace::clean;
 
 has odd_bgcolor  => (is => 'rw');
 has even_bgcolor => (is => 'rw');
 has odd_fgcolor  => (is => 'rw');
 has even_fgcolor => (is => 'rw');
+
+sub summary {
+    "Set different foreground and/or background color for odd/even rows";
+}
 
 sub apply {
     my ($self, $table) = @_;
@@ -35,12 +40,6 @@ sub apply {
 1;
 
 =for Pod::Coverage ^(apply)$
-
-=head1 DESCRIPTION
-
-This style set allows you to set different foreground and/or background color
-for odd/even rows.
-
 
 =head1 ATTRIBUTES
 

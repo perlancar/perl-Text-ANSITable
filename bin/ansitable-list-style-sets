@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use 5.010;
+use strict;
+use warnings;
+
+use Text::ANSITable;
+
+# VERSION
+
+binmode(STDOUT, ":utf8");
+
+my $t = Text::ANSITable->new;
+
+my $all_sets = $t->list_style_sets(1);
+
+$t->columns(['Name', 'Summary', 'Arguments']);
+for (sort keys %$all_sets) {
+    my $set = $all_sets->{$_};
+    $t->add_row([
+        $set->{name},
+        $set->{summary},
+        join(", ", @{ $set->{args} // []}),
+    ]);
+}
+
+print $t->draw;
+
+#ABSTRACT: List available style sets for Text::ANSITable
+#PODNAME: ansitable-list-style-sets
