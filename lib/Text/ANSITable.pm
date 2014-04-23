@@ -1994,7 +1994,7 @@ Example:
 
 =head1 CELL FORMATS
 
-The per-column and per-cell C<formats> styles regulate how to format data. The
+The per-column- and per-cell- C<formats> style regulates how to format data. The
 value for this style setting will be passed to L<Data::Unixish::Apply>'s
 C<apply()>, as the C<functions> argument. So it should be a single string (like
 C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
