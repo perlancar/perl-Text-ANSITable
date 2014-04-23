@@ -25,12 +25,12 @@ sub apply {
                 $styles{bgcolor} = $self->odd_bgcolor
                     if defined $self->odd_bgcolor;
                 $styles{fgcolor}=$self->odd_fgcolor
-                    if defined $self->odd_bgcolor;
+                    if defined $self->odd_fgcolor;
             } else {
                 $styles{bgcolor} = $self->even_bgcolor
                     if defined $self->even_bgcolor;
                 $styles{fgcolor} = $self->even_fgcolor
-                    if defined $self->even_bgcolor;
+                    if defined $self->even_fgcolor;
             }
             \%styles;
         },
