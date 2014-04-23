@@ -2,9 +2,15 @@ Revision history for Text-ANSITable
 
 0.29    2014-04-23 (SHARYANTO)
 
+        [ENHANCEMENTS]
+
         - Add conditional {column,row,cell} styles.
 
         - Add style sets. This makes applying a set of styles easy and reusable.
+
+        [INTERNAL]
+
+        - Break up _prepare_draw() into several smaller methods.
 
         - Revert another optimization because it was buggy.
 
