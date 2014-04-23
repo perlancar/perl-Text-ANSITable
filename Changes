@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.31    2014-04-23 (SHARYANTO)
+
+        - Provide 'row_data' to conditional {row,cell} style's coderef.
+
+        - Bugfix: Style set, border style, and color theme modules must be
+          searched recursively.
+
+        - Observe WRAP environment to set default for 'wrap' style.
+
+
 0.30    2014-04-23 (SHARYANTO)
 
         - Add list_style_sets().
