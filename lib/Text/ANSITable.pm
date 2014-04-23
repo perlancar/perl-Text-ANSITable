@@ -904,7 +904,7 @@ sub _detect_column_types {
             $res->{align}   = 'middle';
             $res->{fgcolor} = $ct->{colors}{date_data};
             $res->{formats} = [['date' => {}]];
-        } elsif ($type eq 'num') {
+        } elsif ($type =~ /\A(num|float|int)\z/) {
             $res->{align}   = 'right';
             $res->{fgcolor} = $ct->{colors}{num_data};
             if (($subtype//"") eq 'pct') {
