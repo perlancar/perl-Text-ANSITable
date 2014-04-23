@@ -590,9 +590,10 @@ sub get_eff_cell_style {
         local $_ = $rows->[$row][$col];
         my $res = $e->[0]->(
             $self,
-            content => $_,
-            col     => $col,
-            row     => $row,
+            content  => $_,
+            col      => $col,
+            row      => $row,
+            row_data => $rows->[$row],
         );
         next COND unless $res;
         if (ref($res) eq 'HASH') {
