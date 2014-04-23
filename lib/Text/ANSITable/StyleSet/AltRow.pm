@@ -39,7 +39,7 @@ sub apply {
 
 1;
 
-=for Pod::Coverage ^(apply)$
+=for Pod::Coverage ^(summary|apply)$
 
 =head1 ATTRIBUTES
 

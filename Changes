@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.30    2014-04-23 (SHARYANTO)
+
+        - Add list_style_sets().
+
+        - Add script: ansitable-list-style-sets.
+
+
 0.29    2014-04-23 (SHARYANTO)
 
         [ENHANCEMENTS]

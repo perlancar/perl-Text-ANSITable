@@ -2306,6 +2306,11 @@ C<Text::ANSITable::BorderStyle::*> modules.
 Return the names of available color themes. Color themes will be searched in
 C<Text::ANSITable::ColorTheme::*> modules.
 
+=head2 $t->list_style_sets => LIST
+
+Return the names of available style sets. Style set names are retrieved by
+listing modules under C<Text::ANSITable::StyleSet::*> namespace.
+
 =head2 $t->get_border_style($name) => HASH
 
 Can also be called as a static method: C<<
