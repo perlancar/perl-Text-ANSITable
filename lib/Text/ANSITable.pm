@@ -640,7 +640,7 @@ sub list_style_sets {
 
     if (!$all_sets) {
         my $mods = Module::List::list_modules("$prefix\::",
-                                              {list_modules=>1});
+                                              {list_modules=>1, recurse=>1});
         $all_sets = {};
         for my $mod (sort keys %$mods) {
             #$log->tracef("Loading style set module '%s' ...", $mod);
