@@ -480,6 +480,7 @@ sub get_eff_row_style {
         return $self->{_draw}{eff_row_styles}[$row]{$style};
     }
 
+    my $rows = $self->{rows};
     my %styles;
 
     # apply conditional styles
@@ -489,7 +490,8 @@ sub get_eff_row_style {
         local $_ = $row;
         my $res = $e->[0]->(
             $self,
-            row     => $row,
+            row      => $row,
+            row_data => $rows->[$row],
         );
         next COND unless $res;
         if (ref($res) eq 'HASH') {
@@ -2036,8 +2038,8 @@ Available keys in C<%args> for conditional column styles: C<col> (int, column
 index), C<colname> (str, column name). Additionally, C<$_> will be set locally
 to the column index.
 
-Available keys in C<%args> for conditional row styles: C<row> (int, row index).
-Additionally, C<$_> will be set locally to the row index.
+Available keys in C<%args> for conditional row styles: C<row> (int, row index),
+C<row_data> (array). Additionally, C<$_> will be set locally to the row index.
 
 Available keys in C<%args> for conditional cell styles: C<content> (str), C<col>
 (int, column index), C<row> (int, row index). Additionally, C<$_> will be set
