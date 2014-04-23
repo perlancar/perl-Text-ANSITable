@@ -1277,9 +1277,11 @@ sub _get_cell_lines {
 
     for (@lines) {
         $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
-        # add default color
-        s/\e\[0m(?=.)/\e[0m$color/g if length($color);
-        $_ = $color . $_;
+        if ($self->{use_color}) {
+            # add default color
+            s/\e\[0m(?=.)/\e[0m$color/g if length($color);
+            $_ = $color . $_;
+        }
     }
 
     \@lines;
