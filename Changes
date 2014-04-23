@@ -1,8 +1,10 @@
 Revision history for Text-ANSITable
 
-0.29    2014-04-21 (SHARYANTO) (not yet released)
+0.29    2014-04-23 (SHARYANTO)
 
-        - Add conditional styles.
+        - Add conditional {column,row,cell} styles.
+
+        - Add style sets. This makes applying a set of styles easy and reusable.
 
         - Revert another optimization because it was buggy.
 

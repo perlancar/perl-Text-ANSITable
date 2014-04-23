@@ -34,6 +34,14 @@ sub apply {
 
 1;
 
+=for Pod::Coverage ^(apply)$
+
+=head1 DESCRIPTION
+
+This style set allows you to set different foreground and/or background color
+for odd/even rows.
+
+
 =head1 ATTRIBUTES
 
 =head2 odd_bgcolor

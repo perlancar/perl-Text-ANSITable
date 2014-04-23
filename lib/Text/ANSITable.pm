@@ -2014,9 +2014,15 @@ a hashref to return additional styles that will be merged/applied too.
 
 =head1 STYLE SETS
 
-A style set is just a collection of style settings that can be applied. More
-than one style sets can be applied. For example, the
-L<Text::ANSITable::StyleSet::AltRow> style set defines this:
+A style set is just a collection of style settings that can be applied.
+Organizing styles into style sets makes applying the styles simpler and more
+reusable.
+
+More than one style sets can be applied.
+
+Style set module accepts arguments.
+
+For example, the L<Text::ANSITable::StyleSet::AltRow> style set defines this:
 
  has odd_bgcolor  => (is => 'rw');
  has even_bgcolor => (is => 'rw');
@@ -2030,11 +2036,15 @@ L<Text::ANSITable::StyleSet::AltRow> style set defines this:
          my ($t, %args) = @_;
          my %styles;
          if ($_ % 2) {
-             $styles{bgcolor}=$self->odd_bgcolor if defined $self->odd_bgcolor;
-             $styles{fgcolor}=$self->odd_fgcolor if defined $self->odd_bgcolor;
+             $styles{bgcolor} = $self->odd_bgcolor
+                 if defined $self->odd_bgcolor;
+             $styles{fgcolor} = $self->odd_fgcolor
+                 if defined $self->odd_bgcolor;
          } else {
-             $styles{bgcolor} = $self->even_bgcolor if defined $self->even_bgcolor;
-             $styles{fgcolor} = $self->even_fgcolor if defined $self->even_bgcolor;
+             $styles{bgcolor} = $self->even_bgcolor
+                 if defined $self->even_bgcolor;
+             $styles{fgcolor} = $self->even_fgcolor
+                 if defined $self->even_bgcolor;
          }
          \%styles;
      });
@@ -2377,6 +2387,10 @@ on conditional style.
 Get "effective" cell style named C<$style> for a particular cell. Effective cell
 style is calculated from all the conditional cell styles and the per-cell styles
 then merged together. This is the per-cell style actually applied.
+
+=head2 $t->apply_style_set($name, %args)
+
+Apply a style set. See L</"STYLE SETS"> for more details.
 
 =head2 $t->draw => STR
 
