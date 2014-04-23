@@ -2657,6 +2657,11 @@ C<ind_name>):
 
  % ANSITABLE_COLUMN_STYLES='{"ind_name":{"formats":[["cond",{"if":"$_ =~ /Cuti/", "then":["ansi::color",{"color":"red"}], "else":["ansi::color",{"color":"green"}]}]]}}' program-that-outputs-ansitable ...
 
+Or you can also use the C<add_cond_{cell,row,column}> methods. See
+L</"CONDITIONAL STYLES"> for more details.
+
+You can also see the C<Text::ANSITable::StyleSet::*> modules which might already
+package common conditional formatting needs.
 
 =head2 Border
 
@@ -2751,6 +2756,14 @@ Aside from doing C<< $t->set_row_style($row_num, bgcolor=>...) >> for each row,
 you can also do this:
 
  $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
+
+Or, you can use conditional row styles:
+
+ $t->add_cond_row_style(sub { $_ % 2 }, {bgcolor=>'202020'});
+
+Or, you can use the L<Text::ANSITable::StyleSet::AltRow> style set:
+
+ $t->apply_style_set(AltRow => {even_bgcolor=>'202020'});
 
 
 =head1 TODO/BUGS
