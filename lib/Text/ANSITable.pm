@@ -2702,28 +2702,32 @@ See L<Data::Unixish::bool> for more details.
 
 =head3 How do I do conditional cell formatting?
 
-For example, if the cell contains the string "Cuti", you want to color the cell
-yellow. Otherwise, you want to color the cell red. You can use the C<formats>
-column style with the L<Data::Unixish::cond> function:
+There are several ways.
+
+First, you can use the C<cond> dux function through C<formats> style. For
+example, if the cell contains the string "Cuti", you want to color the cell
+yellow. Otherwise, you want to color the cell red:
 
  $t->set_column_style($colname, formats => [
      [cond => {
-         if   => '$_ =~ /Cuti/',
+         if   => sub { $_ =~ /Cuti/ },
          then => ["ansi::color", {color=>"yellow"}],
          else => ["ansi::color", {color=>"red"}],
      }]
  ]);
 
-Or from the command-line (assuming the column you want to format is called
-C<ind_name>):
+Another way is to use the C<add_cond_{cell,row,column}> methods. See
+L</"CONDITIONAL STYLES"> for more details. An example:
 
- % ANSITABLE_COLUMN_STYLES='{"ind_name":{"formats":[["cond",{"if":"$_ =~ /Cuti/", "then":["ansi::color",{"color":"red"}], "else":["ansi::color",{"color":"green"}]}]]}}' program-that-outputs-ansitable ...
+ $t->add_cond_row_style(sub {
+     my %args = @_;
+     $args{colname} =~ /Cuti/ ? {bgcolor=>"ffff00"} : {bgcolor=>"ff0000"};
+ });
 
-Or you can also use the C<add_cond_{cell,row,column}> methods. See
-L</"CONDITIONAL STYLES"> for more details.
-
-You can also see the C<Text::ANSITable::StyleSet::*> modules which might already
-package common conditional formatting needs.
+And another way is to use (or create) style set, which is basically a packaging
+of the above ways. An advantage of using style set is, because you do not
+specify coderef directly, you can specify it from the environment variable. See
+L</"STYLE SETS"> for more details.
 
 =head2 Border
 
