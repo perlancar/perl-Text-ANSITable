@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.32    2014-04-28 (SHARYANTO)
+
+        - Recognize numeric types from tablespec (int & float aside from num).
+
+        - Update dependency name (Data::Unixish::{ansi,ANSI}).
+
+
 0.31    2014-04-23 (SHARYANTO)
 
         - Provide 'row_data' to conditional {row,cell} style's coderef.
