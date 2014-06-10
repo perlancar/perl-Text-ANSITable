@@ -2001,8 +2001,8 @@ C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
 functions are available. Functions of interest to formatting data include:
-C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ansi::*> (in
-L<Data::Unixish::ansi>), (among others).
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ANSI::*> (in
+L<Data::Unixish::ANSI>), (among others).
 
 
 =head1 CONDITIONAL STYLES
@@ -2686,7 +2686,7 @@ contain those):
 =head3 How do I highlight text with color?
 
 The C<ansi::highlight> dux function can be used to highlight text (see:
-L<Data::Unixish::ansi::highlight>).
+L<Data::Unixish::ANSI::highlight>).
 
  $t->set_column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 
