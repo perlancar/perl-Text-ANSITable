@@ -203,8 +203,8 @@ sub BUILD {
         # does not support unicode, it actually can display some uni characters
         # like single borders, so we use it as the default here instead of
         # singleo_ascii (linux vc doesn't seem to support box_chars).
-        my $linux_vc = $self->detect_terminal->{emulator_engine} eq 'linux' &&
-            !defined($ENV{UTF8});
+        my $emu_eng  = $self->detect_terminal->{emulator_engine} // '';
+        my $linux_vc = $emu_eng eq 'linux' && !defined($ENV{UTF8});
         if ($linux_vc) {
             $use_utf8 = 1;
             $bs = 'Default::singleo_utf8';
