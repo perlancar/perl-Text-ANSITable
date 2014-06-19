@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.33    2014-06-19 (SHARYANTO)
+
+        - No functional changes.
+
+        - Avoid perl undef warning on Windows.
+
+
 0.32    2014-04-28 (SHARYANTO)
 
         - Recognize numeric types from tablespec (int & float aside from num).
