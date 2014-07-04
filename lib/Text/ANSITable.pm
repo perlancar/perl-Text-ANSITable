@@ -1641,10 +1641,10 @@ sub draw {
  $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
  # fill data
- $t->columns(["name", "color", "price"]);
- $t->add_row(["chiki"      , "yellow",  2000]);
- $t->add_row(["lays"       , "green" ,  7000]);
- $t->add_row(["tao kae noi", "blue"  , 18500]);
+ $t->columns(["name"       , "color" , "price"]);
+ $t->add_row(["chiki"      , "yellow",    2000]);
+ $t->add_row(["lays"       , "green" ,    7000]);
+ $t->add_row(["tao kae noi", "blue"  ,   18500]);
 
  # draw it!
  say $t->draw;
