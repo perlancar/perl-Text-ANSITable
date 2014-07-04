@@ -2848,19 +2848,33 @@ row span? column span?
 
 =head1 SEE ALSO
 
+=head2 Related to Text::ANSITable family
+
 For collections of border styles, search for C<Text::ANSITable::BorderStyle::*>
 modules.
 
 For collections of color themes, search for C<Text::ANSITable::ColorTheme::*>
 modules.
 
-Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
-L<Text::ASCIITable>, L<Text::UnicodeTable::Simple>, L<Table::Simple> (uses
-Moose). There are a couple of "extensions" for Text::ASCIITable:
-L<Text::ASCIITable::TW>, L<Text::ASCIITable::Wrap>; Text::ANSITable can be an
-alternative for all those modules since it can already handle wide-characters,
-multiline text in cells.
+=head2 Other table-formatting CPAN modules
 
-Modules used: L<Text::ANSI::Util>, L<Color::ANSI::Util>.
+L<Text::ASCIITable> is one of the most popular table-formatting module. There
+are a couple of "extensions" for Text::ASCIITable: L<Text::ASCIITable::TW>,
+L<Text::ASCIITable::Wrap>; Text::ANSITable can be an alternative for all those
+modules since it can already handle wide-characters, multiline text in cells.
+
+L<Text::TabularDisplay>
+
+L<Text::Table>
+
+L<Text::SimpleTable>
+
+L<Text::UnicodeTable::Simple>
+
+L<Table::Simple>
+
+=head2 Other
+
+Unix command B<column> (e.g. C<column -t>).
 
 =cut
