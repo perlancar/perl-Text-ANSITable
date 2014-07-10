@@ -193,6 +193,11 @@ sub BUILD {
         }
     }
 
+    # set "pseudo"-attributes, they are not declared using 'has' so Moo doesn't
+    # set them and we need to set them manually
+    if ($args->{border_style}) { $self->border_style($args->{border_style}) }
+    if ($args->{color_theme}) { $self->color_theme($args->{color_theme}) }
+
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
