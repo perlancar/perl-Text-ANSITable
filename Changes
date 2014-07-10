@@ -1,5 +1,14 @@
 Revision history for Text-ANSITable
 
+0.34    2014-07-10 (SHARYANTO)
+
+        - [Bugfix] Setting border_style & color_theme in constructor didn't take
+          effect.
+
+        - [pod] Reorganise See Also section, mention Text::TabularDisplay and
+          column (Unix util).
+
+
 0.33    2014-06-19 (SHARYANTO)
 
         - No functional changes.
