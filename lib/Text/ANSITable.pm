@@ -1700,8 +1700,6 @@ C<CamelCase>, and it uses arrayref for C<columns> and C<add_row>. When
 specifying border styles, the order of characters are slightly different. More
 fine-grained options to customize appearance.
 
-It uses L<Moo> object system.
-
 
 =head1 BORDER STYLES
 
