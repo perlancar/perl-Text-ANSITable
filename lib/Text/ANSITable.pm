@@ -1,5 +1,8 @@
 package Text::ANSITable;
 
+# DATE
+# VERSION
+
 use 5.010001;
 use Log::Any '$log';
 use Moo;
@@ -9,8 +12,6 @@ use experimental 'smartmatch';
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
-
-# VERSION
 
 my $ATTRS = [qw(
 
@@ -636,7 +637,7 @@ sub apply_style_set {
 sub list_style_sets {
     require Module::List;
     require Module::Load;
-    require SHARYANTO::Package::Util;
+    require Package::MoreUtil;
 
     my ($self, $detail) = @_;
 
@@ -654,7 +655,7 @@ sub list_style_sets {
             my $name = $mod; $name =~ s/\A\Q$prefix\:://;
             my $summary = $mod->summary;
             # we don't have meta, so dig it ourselves
-            my %ct = SHARYANTO::Package::Util::list_package_contents($mod);
+            my %ct = Package::MoreUtil::list_package_contents($mod);
             my $args = [sort grep {!/\W/ && !/\A(new|summary|apply)\z/}
                             keys %ct];
             $all_sets->{$name} = {name=>$name, summary=>$summary, args=>$args};
