@@ -1,5 +1,13 @@
 Revision history for Text-ANSITable
 
+0.35    2014-12-05 (PERLANCAR)
+
+	- No functional changes.
+
+	- Use the new renamed module SHARYANTO::Package::Util ->
+	  Package::MoreUtil.
+
+
 0.34    2014-07-10 (SHARYANTO)
 
         - [Bugfix] Setting border_style & color_theme in constructor didn't take
