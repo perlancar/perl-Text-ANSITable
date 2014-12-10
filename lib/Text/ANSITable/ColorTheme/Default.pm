@@ -1,13 +1,14 @@
 package Text::ANSITable::ColorTheme::Default;
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
+use Color::RGB::Util qw(mix_2_rgb_colors);
 use Function::Fallback::CoreOrPP qw(clone);
-use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
-
-# VERSION
 
 our %color_themes = (
 
