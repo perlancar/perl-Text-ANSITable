@@ -162,8 +162,8 @@ has header_bgcolor => (
     is      => 'rw',
 );
 
-with 'SHARYANTO::Role::ColorTheme';
-with 'SHARYANTO::Role::BorderStyle';
+with 'Border::Style::Role';
+with 'Color::Theme::Role';
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -1727,7 +1727,7 @@ default.
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
 modules for example, like L<Text::ANSITable::BorderStyle::Default>. For more
-about border styles, refer to L<SHARYANTO::Role::BorderStyle>.
+about border styles, refer to L<Border::Style::Role>.
 
 
 =head1 COLOR THEMES
@@ -1753,7 +1753,7 @@ also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. For more
-about color themes, refer to L<SHARYANTO::Role::ColorTheme>.
+about color themes, refer to L<Color::Theme::Role>.
 
 
 =head1 COLUMN WIDTHS
