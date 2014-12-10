@@ -1339,9 +1339,9 @@ sub _get_header_cell_lines {
 
     my $fgcolor;
     if (defined $self->{header_fgcolor}) {
-        $fgcolor = $self->themecol2ansi($self->{header_fgcolor});
+        $fgcolor = $self->_themecol2ansi($self->{header_fgcolor});
     } elsif (defined $self->{cell_fgcolor}) {
-        $fgcolor = $self->themecol2ansi($self->{cell_fgcolor});
+        $fgcolor = $self->_themecol2ansi($self->{cell_fgcolor});
     #} elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
     #    $fgcolor = $self->themecol2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
     } elsif (defined $ct->{colors}{header}) {
@@ -1354,13 +1354,13 @@ sub _get_header_cell_lines {
 
     my $bgcolor;
     if (defined $self->{header_bgcolor}) {
-        $bgcolor = $self->themecol2ansi($self->{header_bgcolor},
+        $bgcolor = $self->_themecol2ansi($self->{header_bgcolor},
                                         undef, 1);
     } elsif (defined $self->{cell_bgcolor}) {
-        $bgcolor = $self->themecol2ansi($self->{cell_bgcolor},
+        $bgcolor = $self->_themecol2ansi($self->{cell_bgcolor},
                                         undef, 1);
     } elsif (defined $self->{_draw}{fcol_detect}[$i]{bgcolor}) {
-        $fgcolor = $self->themecol2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
+        $fgcolor = $self->_themecol2ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
                                         undef, 1);
     } elsif (defined $ct->{colors}{header_bg}) {
         $bgcolor = $self->get_theme_color_as_ansi('header_bg');
@@ -1410,32 +1410,34 @@ sub _get_data_cell_lines {
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'fgcolor'))) {
-        $fgcolor = $self->themecol2ansi($tmp, $args);
+        $fgcolor = $self->_themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'fgcolor'))) {
-        $fgcolor = $self->themecol2ansi($tmp, $args);
+        $fgcolor = $self->_themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'fgcolor'))) {
-        $fgcolor = $self->themecol2ansi($tmp, $args);
+        $fgcolor = $self->_themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
-        $fgcolor = $self->themecol2ansi($tmp, $args);
+        $fgcolor = $self->_themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
-        $fgcolor = $self->themecol2ansi($tmp, $args);
+        $fgcolor = $self->_themecol2ansi($tmp, $args);
     } elsif (defined $ct->{colors}{cell}) {
         $fgcolor = $self->get_theme_color_as_ansi('cell', $args);
     } else {
         $fgcolor = "";
     }
 
+    # XXX temp, use role's internal methods
+
     my $bgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'bgcolor'))) {
-        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
+        $bgcolor = $self->_themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'bgcolor'))) {
-        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
+        $bgcolor = $self->_themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'bgcolor'))) {
-        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
+        $bgcolor = $self->_themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
-        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
+        $bgcolor = $self->_themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
-        $bgcolor = $self->themecol2ansi($tmp, $args, 1);
+        $bgcolor = $self->_themecol2ansi($tmp, $args, 1);
     } elsif (defined $ct->{colors}{cell_bg}) {
         $bgcolor = $self->get_theme_color_as_ansi('cell_bg', $args);
     } else {
