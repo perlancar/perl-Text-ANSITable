@@ -164,6 +164,7 @@ has header_bgcolor => (
 
 with 'Border::Style::Role';
 with 'Color::Theme::Role::ANSI';
+with 'Term::App::Role::Attrs';
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -203,7 +204,7 @@ sub BUILD {
     unless ($self->{border_style}) {
         my $bs;
 
-        my $use_utf8 = $self->{use_utf8};
+        my $use_utf8 = $self->use_utf8;
 
         # even though Term::Detect::Software decides that linux virtual console
         # does not support unicode, it actually can display some uni characters
@@ -230,7 +231,7 @@ sub BUILD {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
         } elsif ($use_utf8) {
             $bs //= 'Default::bricko';
-        } elsif ($self->{use_box_chars}) {
+        } elsif ($self->use_box_chars) {
             $bs = 'Default::singleo_boxchar';
         } else {
             $bs = 'Default::singleo_ascii';
@@ -244,9 +245,9 @@ sub BUILD {
         my $ct;
         if (defined $ENV{ANSITABLE_COLOR_THEME}) {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
-        } elsif ($self->{use_color}) {
+        } elsif ($self->use_color) {
             my $bg = $self->detect_terminal->{default_bgcolor} // '';
-            if ($self->{color_depth} >= 2**24) {
+            if ($self->color_depth >= 2**24) {
                 $ct = 'Default::default_gradation' .
                     ($bg eq 'ffffff' ? '_whitebg' : '');
             } else {
