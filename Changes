@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.36    2014-12-11 (PERLANCAR)
+
+        - No functional changes.
+
+        - Use the new name of renamed module SHARYANTO::Role::ColorTheme ->
+          Color::Theme::Role::ANSI, SHARYANTO::Role::TermAttrs ->
+          Term::App::Role::Attrs, SHARYANTO::Role::BorderStyle ->
+          Border::Style::Role, SHARYANTO::Color::Util -> Color::RGB::Util.
+
+
 0.35    2014-12-05 (PERLANCAR)
 
 	- No functional changes.
