@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.37    2014-12-12 (PERLANCAR)
+
+	- No functional changes.
+
+	- [pod] Insert sample output of the scripts.
+
+
 0.36    2014-12-11 (PERLANCAR)
 
         - No functional changes.
