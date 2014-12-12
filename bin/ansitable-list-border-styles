@@ -1,12 +1,13 @@
 #!perl
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
 use Text::ANSITable;
-
-# VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -40,3 +41,11 @@ print $t->draw;
 
 #ABSTRACT: List available border styles for Text::ANSITable
 #PODNAME: ansitable-list-border-styles
+
+=head1 SYNOPSIS
+
+ % ansitable-list-border-styles
+
+Sample output:
+
+# CODE: system $^X, "-Ilib", "bin/ansitable-list-border-styles"; die "system() failed" if $?;

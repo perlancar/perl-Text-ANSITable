@@ -1,12 +1,13 @@
 #!perl
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
 use Text::ANSITable;
-
-# VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -28,3 +29,11 @@ print $t->draw;
 
 #ABSTRACT: List available style sets for Text::ANSITable
 #PODNAME: ansitable-list-style-sets
+
+=head1 SYNOPSIS
+
+ % ansitable-list-style-sets
+
+Sample output:
+
+# CODE: $ENV{COLUMNS}=80; system $^X, "-Ilib", "bin/ansitable-list-style-sets"; die "system() failed" if $?;

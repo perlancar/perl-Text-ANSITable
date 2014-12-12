@@ -1,12 +1,13 @@
 #!perl
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
 use Text::ANSITable;
-
-# VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -44,3 +45,11 @@ print $t->draw;
 
 #ABSTRACT: List available color themes for Text::ANSITable
 #PODNAME: ansitable-list-color-themes
+
+=head1 SYNOPSIS
+
+ % ansitable-list-color-themes
+
+Sample output:
+
+# CODE: system $^X, "-Ilib", "bin/ansitable-list-color-themes"; die "system() failed" if $?;

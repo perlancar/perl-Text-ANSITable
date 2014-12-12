@@ -1,5 +1,8 @@
 package Text::ANSITable::StyleSet::AltRow;
 
+# DATE
+# VERSION
+
 use 5.010;
 use Moo;
 use namespace::clean;
