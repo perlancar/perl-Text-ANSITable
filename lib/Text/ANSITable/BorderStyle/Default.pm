@@ -1,11 +1,12 @@
 package Text::ANSITable::BorderStyle::Default;
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use utf8;
 use warnings;
-
-# VERSION
 
 our %border_styles = (
 
