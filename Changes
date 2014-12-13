@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.38    2014-12-14 (PERLANCAR)
+
+	- No functional changes.
+
+        - [pod] Show sample table for each border style.
+
+
 0.37    2014-12-12 (PERLANCAR)
 
 	- No functional changes.
