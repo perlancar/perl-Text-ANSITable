@@ -44,7 +44,7 @@ say "Demo table";
 print $t->draw;
 
 #ABSTRACT: List available color themes for Text::ANSITable
-#PODNAME: ansitable-list-color-themes
+#PODNAME:
 
 =head1 SYNOPSIS
 

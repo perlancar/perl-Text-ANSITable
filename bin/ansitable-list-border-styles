@@ -40,7 +40,7 @@ print $t->draw;
 #use Data::Dump; dd $t->{_row_separators}; dd $t->{_draw}{frow_separators};
 
 #ABSTRACT: List available border styles for Text::ANSITable
-#PODNAME: ansitable-list-border-styles
+#PODNAME:
 
 =head1 SYNOPSIS
 

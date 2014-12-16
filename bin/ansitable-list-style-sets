@@ -28,7 +28,7 @@ for (sort keys %$all_sets) {
 print $t->draw;
 
 #ABSTRACT: List available style sets for Text::ANSITable
-#PODNAME: ansitable-list-style-sets
+#PODNAME:
 
 =head1 SYNOPSIS
 
