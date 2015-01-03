@@ -42,6 +42,8 @@ sub apply {
 
 1;
 
+# ABSTRACT: Set different foreground and/or background color for odd/even rows";
+
 =for Pod::Coverage ^(summary|apply)$
 
 =head1 ATTRIBUTES
