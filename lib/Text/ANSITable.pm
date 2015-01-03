@@ -2837,20 +2837,6 @@ Or, you can use the L<Text::ANSITable::StyleSet::AltRow> style set:
  $t->apply_style_set(AltRow => {even_bgcolor=>'202020'});
 
 
-=head1 TODO/BUGS
-
-Most color themes still look crappy on 256 colors (I develop on Konsole).
-
-Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
-{ansi=>1, mb=>1}]]).
-
-Column styles: show_{left,right}_border (shorter name? {l,r}border?)
-
-Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
-
-row span? column span?
-
-
 =head1 SEE ALSO
 
 =head2 Related to Text::ANSITable family
