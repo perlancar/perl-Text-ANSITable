@@ -48,15 +48,15 @@ has columns => (
     default => sub { [] },
     trigger => sub {
         my $self = shift;
-        $self->{_columns_set} = 1;
+        $self->{_columns_set}++;
     },
 );
 has rows => (
     is      => 'rw',
     default => sub { [] },
     trigger => sub {
-        my $self = shift;
-        $self->_set_default_cols unless $self->{_first_row_set};
+        my ($self, $rows) = @_;
+        $self->_set_default_cols($rows->[0]);
     },
 );
 has column_filter => (
@@ -272,15 +272,15 @@ sub BUILD {
 
 sub _set_default_cols {
     my ($self, $row) = @_;
-    return if $self->{_columns_set};
-    $self->columns([map {"col$_"} 0..@$row-1]);
+    return if $self->{_columns_set}++;
+    $self->columns([map {"col$_"} 0..@$row-1]) if $row;
 }
 
 sub add_row {
     my ($self, $row, $styles) = @_;
     croak "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
-    $self->_set_default_cols($row) unless $self->{_first_row_set}++;
+    $self->_set_default_cols($row) unless $self->{_columns_set}++;
     if ($styles) {
         my $i = @{ $self->{rows} }-1;
         for my $s (keys %$styles) {
