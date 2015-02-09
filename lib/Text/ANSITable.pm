@@ -2126,6 +2126,10 @@ examples.
 Store column names. Note that when drawing, you can omit some columns, reorder
 them, or display some more than once (see C<column_filter> attribute).
 
+Caveat: Since, for convenience, a column can be referred to using its name or
+position, weird/unecxpected thing can happen if you name a column with a number
+(e.g. 0, 1, 2, ...). So don't do that.
+
 =head2 rows => ARRAY OF ARRAY OF STR
 
 Store row data. You can set this attribute directly, or add rows incrementally
