@@ -4,6 +4,7 @@ package Text::ANSITable;
 # VERSION
 
 use 5.010001;
+use Carp;
 use Log::Any '$log';
 use Moo;
 use experimental 'smartmatch';
@@ -172,7 +173,7 @@ sub BUILD {
     if ($ENV{ANSITABLE_STYLE_SETS}) {
         require JSON;
         my $sets = JSON::decode_json($ENV{ANSITABLE_STYLE_SETS});
-        die "ANSITABLE_STYLE_SETS must be an array"
+        croak "ANSITABLE_STYLE_SETS must be an array"
             unless ref($sets) eq 'ARRAY';
         for my $set (@$sets) {
             if (ref($set) eq 'ARRAY') {
@@ -188,7 +189,7 @@ sub BUILD {
         my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
         for my $k (keys %$s) {
             my $v = $s->{$k};
-            die "Unknown table style '$k' in ANSITABLE_STYLE environment, ".
+            croak "Unknown table style '$k' in ANSITABLE_STYLE environment, ".
                 "please use one of [".join(", ", @$STYLES)."]"
                     unless $k ~~ $STYLES;
             $self->{$k} = $v;
@@ -263,7 +264,7 @@ sub BUILD {
 
 sub add_row {
     my ($self, $row, $styles) = @_;
-    die "Row must be arrayref" unless ref($row) eq 'ARRAY';
+    croak "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
     if ($styles) {
         my $i = @{ $self->{rows} }-1;
@@ -286,7 +287,7 @@ sub add_row_separator {
 
 sub add_rows {
     my ($self, $rows, $styles) = @_;
-    die "Rows must be arrayref" unless ref($rows) eq 'ARRAY';
+    croak "Rows must be arrayref" unless ref($rows) eq 'ARRAY';
     $self->add_row($_, $styles) for @$rows;
     $self;
 }
@@ -300,7 +301,7 @@ sub _colnum {
     for my $i (0..@$cols-1) {
         return $i if $cols->[$i] eq $colname;
     }
-    die "Unknown column name '$colname'";
+    croak "Unknown column name '$colname'";
 }
 
 sub get_cell {
@@ -338,7 +339,7 @@ sub set_column_style {
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
-        die "Unknown per-column style '$style', please use one of [".
+        croak "Unknown per-column style '$style', please use one of [".
             join(", ", @$COLUMN_STYLES) . "]" unless $style ~~ $COLUMN_STYLES;
         $self->{_column_styles}[$col]{$style} = $val;
     }
@@ -358,7 +359,7 @@ sub add_cond_column_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        die "cond must be a coderef";
+        croak "cond must be a coderef";
     }
 
     my $styles;
@@ -369,7 +370,7 @@ sub add_cond_column_style {
     }
 
     for my $style (keys %$styles) {
-        die "Unknown per-column style '$style', please use one of [".
+        croak "Unknown per-column style '$style', please use one of [".
             join(", ", @$COLUMN_STYLES) . "]" unless $style ~~ $COLUMN_STYLES;
     }
 
@@ -436,7 +437,7 @@ sub set_row_style {
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
-        die "Unknown per-row style '$style', please use one of [".
+        croak "Unknown per-row style '$style', please use one of [".
             join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
         $self->{_row_styles}[$row]{$style} = $val;
     }
@@ -456,7 +457,7 @@ sub add_cond_row_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        die "cond must be a coderef";
+        croak "cond must be a coderef";
     }
 
     my $styles;
@@ -467,7 +468,7 @@ sub add_cond_row_style {
     }
 
     for my $style (keys %$styles) {
-        die "Unknown per-row style '$style', please use one of [".
+        croak "Unknown per-row style '$style', please use one of [".
             join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
     }
 
@@ -536,7 +537,7 @@ sub set_cell_style {
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
-        die "Unknown per-cell style '$style', please use one of [".
+        croak "Unknown per-cell style '$style', please use one of [".
             join(", ", @$CELL_STYLES) . "]" unless $style ~~ $CELL_STYLES;
         $self->{_cell_styles}[$row][$col]{$style} = $val;
     }
@@ -556,7 +557,7 @@ sub add_cond_cell_style {
     my $self = shift;
     my $cond = shift;
     if (ref($cond) ne 'CODE') {
-        die "cond must be a coderef";
+        croak "cond must be a coderef";
     }
 
     my $styles;
@@ -567,7 +568,7 @@ sub add_cond_cell_style {
     }
 
     for my $style (keys %$styles) {
-        die "Unknown per-cell style '$style', please use one of [".
+        croak "Unknown per-cell style '$style', please use one of [".
             join(", ", @$CELL_STYLES) . "]" unless $style ~~ $CELL_STYLES;
     }
 
@@ -624,7 +625,7 @@ sub apply_style_set {
     my $self = shift;
     my $name = shift;
     $name =~ /\A[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*\z/
-        or die "Invalid style set name, please use alphanums only";
+        or croak "Invalid style set name, please use alphanums only";
     {
         my $name = $name;
         $name =~ s!::!/!g;
@@ -680,14 +681,14 @@ sub _read_style_envs {
     if ($ENV{ANSITABLE_COLUMN_STYLES}) {
         require JSON;
         my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
-        die "ANSITABLE_COLUMN_STYLES must be a hash"
+        croak "ANSITABLE_COLUMN_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $col (keys %$ss) {
             my $ci = $self->_colnum($col);
             my $s = $ss->{$col};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown column style '$k' (for column $col) in ".
+            croak "Unknown column style '$k' (for column $col) in ".
                 "ANSITABLE_COLUMN_STYLES environment, ".
                     "please use one of [".join(", ", @$COLUMN_STYLES)."]"
                         unless $k ~~ $COLUMN_STYLES;
@@ -699,13 +700,13 @@ sub _read_style_envs {
     if ($ENV{ANSITABLE_ROW_STYLES}) {
         require JSON;
         my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
-        die "ANSITABLE_ROW_STYLES must be a hash"
+        croak "ANSITABLE_ROW_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $row (keys %$ss) {
             my $s = $ss->{$row};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown row style '$k' (for row $row) in ".
+            croak "Unknown row style '$k' (for row $row) in ".
                 "ANSITABLE_ROW_STYLES environment, ".
                     "please use one of [".join(", ", @$ROW_STYLES)."]"
                         unless $k ~~ $ROW_STYLES;
@@ -717,10 +718,10 @@ sub _read_style_envs {
     if ($ENV{ANSITABLE_CELL_STYLES}) {
         require JSON;
         my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
-        die "ANSITABLE_CELL_STYLES must be a hash"
+        croak "ANSITABLE_CELL_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $cell (keys %$ss) {
-            die "Invalid cell specification in ANSITABLE_CELL_STYLES: ".
+            croak "Invalid cell specification in ANSITABLE_CELL_STYLES: ".
                 "$cell, please use 'row,col'"
                     unless $cell =~ /^(.+),(.+)$/;
             my $row = $1;
@@ -729,7 +730,7 @@ sub _read_style_envs {
             my $s = $ss->{$cell};
             for my $k (keys %$s) {
                 my $v = $s->{$k};
-            die "Unknown cell style '$k' (for cell $row,$col) in ".
+            croak "Unknown cell style '$k' (for cell $row,$col) in ".
                 "ANSITABLE_CELL_STYLES environment, ".
                     "please use one of [".join(", ", @$CELL_STYLES)."]"
                         unless $k ~~ $CELL_STYLES;
@@ -977,7 +978,7 @@ sub _apply_column_formats {
                 in => [map {$frows->[$_][$i]} 0..@$frows-1],
                 functions => \@fmts,
             );
-            die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
+            croak "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
                 unless $res->[0] == 200;
             $res = $res->[2];
             for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
@@ -1012,7 +1013,7 @@ sub _apply_cell_formats {
                     in => [ $frows->[$i][$j] ],
                     functions => $fmts,
                 );
-                die "Can't format cell ($origi, $cols->[$j]): ".
+                croak "Can't format cell ($origi, $cols->[$j]): ".
                     "$res->[0] - $res->[1]" unless $res->[0] == 200;
                 $frows->[$i][$j] = $res->[2][0] // "";
             }
