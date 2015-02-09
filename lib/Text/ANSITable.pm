@@ -46,10 +46,18 @@ my $CELL_STYLES = [qw(
 has columns => (
     is      => 'rw',
     default => sub { [] },
+    trigger => sub {
+        my $self = shift;
+        $self->{_columns_set} = 1;
+    },
 );
 has rows => (
     is      => 'rw',
     default => sub { [] },
+    trigger => sub {
+        my $self = shift;
+        $self->_set_default_cols unless $self->{_first_row_set};
+    },
 );
 has column_filter => (
     is => 'rw',
@@ -262,10 +270,17 @@ sub BUILD {
     }
 }
 
+sub _set_default_cols {
+    my ($self, $row) = @_;
+    return if $self->{_columns_set};
+    $self->columns([map {"col$_"} 0..@$row-1]);
+}
+
 sub add_row {
     my ($self, $row, $styles) = @_;
     croak "Row must be arrayref" unless ref($row) eq 'ARRAY';
     push @{ $self->{rows} }, $row;
+    $self->_set_default_cols($row) unless $self->{_first_row_set}++;
     if ($styles) {
         my $i = @{ $self->{rows} }-1;
         for my $s (keys %$styles) {
