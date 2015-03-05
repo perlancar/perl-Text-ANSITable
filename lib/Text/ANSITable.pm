@@ -1895,7 +1895,7 @@ When adding row:
 
  $t->add_row($rownum, {vpad=>1});
 
-=item * per-row C<tpad>/C<vpad> style
+=item * per-row C<tpad>/C<bpad> style
 
 Example:
 
