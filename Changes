@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.40    2015-03-05 (PERLANCAR)
+
+        - Several minor tweaks and fixes.
+
+        - [doc] Add caveat note about not naming column with a number.
+
+        - [ux] Set default columns as ["col0", "col1", ...] if we add/set rows but
+          haven't define columns.
+
+
 0.39    2015-01-03 (PERLANCAR)
 
 	- No functional changes.
