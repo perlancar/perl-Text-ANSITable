@@ -1670,7 +1670,7 @@ sub draw {
  $t->add_row(["tao kae noi", "blue"  ,   18500]);
 
  # draw it!
- say $t->draw;
+ print $t->draw;
 
 Samples of output:
 
