@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.41    2015-08-18 (PERLANCAR)
+
+	- No functional changes.
+
+	- Switch from Log::Any to Log::Any::IfLOG.
+
+
 0.40    2015-03-05 (PERLANCAR)
 
         - Several minor tweaks and fixes.
