@@ -28,13 +28,11 @@ for my $name (sort keys %$all_ct) {
 say "Tip: you can run me with color theme name as argument to try it out.";
 print $t->draw;
 
-require DateTime;
-
 $t = Text::ANSITable->new;
 $t->color_theme($chosen_ct);
 my $ct = $t->color_theme;
 $t->columns(['num','percent%','date','bool?','text']);
-$t->add_row([1, 0.4, DateTime->now, 1, 'hello']);
+$t->add_row([1, 0.4, time(), 1, 'hello']);
 $t->add_row([-3.3, 1, time(), 0, 'world']);
 $t->add_row_separator;
 $t->add_row([$_, $_/10, 1367451584+$_*10000, int(rand()*2), "x$_"])
