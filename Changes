@@ -1,5 +1,16 @@
 Revision history for Text-ANSITable
 
+0.42    2015-10-20 (PERLANCAR)
+
+	- No functional changes.
+
+	- To reduce reps, remove use of DateTime in
+          bin/ansitable-list-color-themes.
+
+        - To reduce deps, downgrade prereq Data::Unixish from requires to
+	  recommends.
+
+
 0.41    2015-08-18 (PERLANCAR)
 
 	- No functional changes.
