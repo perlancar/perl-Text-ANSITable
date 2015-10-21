@@ -1,5 +1,13 @@
 Revision history for Text-ANSITable
 
+0.45    2015-10-21 (PERLANCAR)
+
+	- No functional changes.
+
+        - Mention about wide character support depending on an optional prereq
+          Text::ANSI::WideUtil which might need to be installed explicitly.
+
+
 0.44    2015-10-21 (PERLANCAR)
 
 	- [Bugfix] Make usage of Text::ANSI::WideUtil optional, add 'wide'
