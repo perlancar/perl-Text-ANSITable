@@ -1,5 +1,11 @@
 Revision history for Text-ANSITable
 
+0.44    2015-10-21 (PERLANCAR)
+
+	- [Bugfix] Make usage of Text::ANSI::WideUtil optional, add 'wide'
+	  attribute.
+
+
 0.43    2015-10-21 (PERLANCAR)
 
 	- [dist] Fix build failure.
