@@ -11,8 +11,6 @@ use experimental 'smartmatch';
 
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
-                        ta_mbwrap);
 
 my $ATTRS = [qw(
 
@@ -267,6 +265,24 @@ sub BUILD {
             $ct = 'Default::no_color';
         }
         $self->color_theme($ct);
+    }
+
+    unless (defined $self->{wide}) {
+        require Module::Path::More;
+        $self->{wide} = Module::Path::More::module_path(
+            module => 'Text::ANSI::WideUtil') ? 1:0;
+    }
+    require Text::ANSI::NonWideUtil;
+    $self->{_func_add_color_resets} = \&Text::ANSI::NonWideUtil::ta_add_color_resets;
+    if ($self->{wide}) {
+        require Text::ANSI::WideUtil;
+        $self->{_func_length_height} = \&Text::ANSI::WideUtil::ta_mbswidth_height;
+        $self->{_func_pad}           = \&Text::ANSI::WideUtil::ta_mbpad;
+        $self->{_func_wrap}          = \&Text::ANSI::WideUtil::ta_mbwrap;
+    } else {
+        $self->{_func_length_height} = \&Text::ANSI::NonWideUtil::ta_length_height;
+        $self->{_func_pad}           = \&Text::ANSI::NonWideUtil::ta_pad;
+        $self->{_func_wrap}          = \&Text::ANSI::NonWideUtil::ta_wrap;
     }
 }
 
@@ -957,7 +973,7 @@ sub _opt_calc_cell_width_height {
 
     my $wh;
     if ($calcw) {
-        $wh = ta_mbswidth_height($text);
+        $wh = $self->{_func_length_height}->($text);
         $wh->[0] = -$setw if defined($setw) && $setw<0 && $wh->[0] < -$setw;
         $wh->[1] = $seth if !$calch;
         $wh->[1] = -$seth if defined($seth) && $seth<0 && $wh->[1] < -$seth;
@@ -1086,7 +1102,7 @@ sub _wrap_wrappable_columns {
                      defined($fcol_setwidths->[$i]) &&
                          $fcol_setwidths->[$i]>0) {
             for (0..@$frows-1) {
-                $frows->[$_][$i] = ta_mbwrap(
+                $frows->[$_][$i] = $self->{_func_wrap}->(
                     $frows->[$_][$i], $fcol_setwidths->[$i]);
             }
         }
@@ -1202,7 +1218,7 @@ sub _adjust_column_widths {
     for my $ci (keys %acols) {
         next unless $origw{$ci} != $fcol_widths->[$ci];
         for (0..@$frows-1) {
-            $frows->[$_][$ci] = ta_mbwrap(
+            $frows->[$_][$ci] = $self->{_func_wrap}->(
                 $frows->[$_][$ci], $fcol_setwidths->[$ci]);
         }
     }
@@ -1336,7 +1352,7 @@ sub _get_cell_lines {
         ($align =~ /^[Rr]/o ? "left" : "center");
 
     for (@lines) {
-        $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
+        $_ = (" "x$lpad) . $self->{_func_pad}->($_, $width, $pad, " ", 1) . (" "x$rpad);
         if ($self->{use_color}) {
             # add default color
             s/\e\[0m(?=.)/\e[0m$color/g if length($color);
@@ -2200,6 +2216,12 @@ style that uses Unicode characters will result in an exception.
 (In the future, setting C<use_utf8> to 0 might opt the module to use the
 non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
 instead of C<ta_mbwrap()>, and so on).
+
+=head2 wide => BOOL
+
+Whether to include wide-character support. The default is to check for the
+existence of L<Text::ANSI::WideUtil> (an optional prereq). You can explicitly
+enable or disable wide-character support here.
 
 =head2 border_style => HASH
 
