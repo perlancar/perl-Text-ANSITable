@@ -1,5 +1,15 @@
 Revision history for Text-ANSITable
 
+0.43    2015-10-21 (PERLANCAR)
+
+	- [dist] Fix build failure.
+
+	- [dist] Add Data::Unixish::Apply to DevelopRequires prereq (needed
+	  to insert output into POD).
+
+	- [Bugfix] Delay loading Data::Unixish::Apply until it's needed.
+
+
 0.42    2015-10-20 (PERLANCAR)
 
 	- No functional changes.
