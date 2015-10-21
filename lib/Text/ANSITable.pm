@@ -1723,7 +1723,10 @@ ASCII characters if terminal does not support them.
 =item * Unicode and wide character support
 
 Border styles using Unicode characters (double lines, bold/heavy lines, brick
-style, etc). Columns containing wide characters stay aligned.
+style, etc). Columns containing wide characters stay aligned. (Note: support for
+wide characters requires L<Text::ANSI::WideUtil> which is currently set as an
+optional prereq, so you'll need to install it explicitly or set your CPAN client
+to install 'recommends' prereq).
 
 =back
 
@@ -2219,9 +2222,9 @@ instead of C<ta_mbwrap()>, and so on).
 
 =head2 wide => BOOL
 
-Whether to include wide-character support. The default is to check for the
-existence of L<Text::ANSI::WideUtil> (an optional prereq). You can explicitly
-enable or disable wide-character support here.
+Whether to support wide characters. The default is to check for the existence of
+L<Text::ANSI::WideUtil> (an optional prereq). You can explicitly enable or
+disable wide-character support here.
 
 =head2 border_style => HASH
 
