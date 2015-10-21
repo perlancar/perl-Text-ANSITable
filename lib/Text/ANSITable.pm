@@ -973,8 +973,6 @@ sub _opt_calc_cell_width_height {
 }
 
 sub _apply_column_formats {
-    require Data::Unixish::Apply;
-
     my $self = shift;
 
     my $cols  = $self->{columns};
@@ -989,6 +987,7 @@ sub _apply_column_formats {
         my @fmts = @{ $self->get_eff_column_style($i, 'formats') //
                           $fcol_detect->[$i]{formats} // [] };
         if (@fmts) {
+            require Data::Unixish::Apply;
             my $res = Data::Unixish::Apply::apply(
                 in => [map {$frows->[$_][$i]} 0..@$frows-1],
                 functions => \@fmts,
@@ -1005,8 +1004,6 @@ sub _apply_column_formats {
 }
 
 sub _apply_cell_formats {
-    require Data::Unixish::Apply;
-
     my $self = shift;
 
     my $cols  = $self->{columns};
@@ -1024,6 +1021,7 @@ sub _apply_cell_formats {
 
             my $fmts = $self->get_eff_cell_style($origi, $j, 'formats');
             if (defined $fmts) {
+                require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
                     in => [ $frows->[$i][$j] ],
                     functions => $fmts,
