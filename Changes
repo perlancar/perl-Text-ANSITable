@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.46    2015-10-22 (PERLANCAR)
+
+	- Remove needless use of Module::Path::More.
+
+
 0.45    2015-10-21 (PERLANCAR)
 
 	- No functional changes.
