@@ -268,9 +268,7 @@ sub BUILD {
     }
 
     unless (defined $self->{wide}) {
-        require Module::Path::More;
-        $self->{wide} = Module::Path::More::module_path(
-            module => 'Text::ANSI::WideUtil') ? 1:0;
+        $self->{wide} = eval { require Text::ANSI::WideUtil; 1 } ? 1:0;
     }
     require Text::ANSI::NonWideUtil;
     $self->{_func_add_color_resets} = \&Text::ANSI::NonWideUtil::ta_add_color_resets;
