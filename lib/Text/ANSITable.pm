@@ -177,8 +177,8 @@ sub BUILD {
     my ($self, $args) = @_;
 
     if ($ENV{ANSITABLE_STYLE_SETS}) {
-        require JSON;
-        my $sets = JSON::decode_json($ENV{ANSITABLE_STYLE_SETS});
+        require JSON::MaybeXS;
+        my $sets = JSON::MaybeXS::decode_json($ENV{ANSITABLE_STYLE_SETS});
         croak "ANSITABLE_STYLE_SETS must be an array"
             unless ref($sets) eq 'ARRAY';
         for my $set (@$sets) {
@@ -191,8 +191,8 @@ sub BUILD {
     }
 
     if ($ENV{ANSITABLE_STYLE}) {
-        require JSON;
-        my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
+        require JSON::MaybeXS;
+        my $s = JSON::MaybeXS::decode_json($ENV{ANSITABLE_STYLE});
         for my $k (keys %$s) {
             my $v = $s->{$k};
             croak "Unknown table style '$k' in ANSITABLE_STYLE environment, ".
@@ -708,8 +708,8 @@ sub _read_style_envs {
     next if $self->{_read_style_envs}++;
 
     if ($ENV{ANSITABLE_COLUMN_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
+        require JSON::MaybeXS;
+        my $ss = JSON::MaybeXS::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
         croak "ANSITABLE_COLUMN_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $col (keys %$ss) {
@@ -727,8 +727,8 @@ sub _read_style_envs {
     }
 
     if ($ENV{ANSITABLE_ROW_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
+        require JSON::MaybeXS;
+        my $ss = JSON::MaybeXS::decode_json($ENV{ANSITABLE_ROW_STYLES});
         croak "ANSITABLE_ROW_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $row (keys %$ss) {
@@ -745,8 +745,8 @@ sub _read_style_envs {
     }
 
     if ($ENV{ANSITABLE_CELL_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
+        require JSON::MaybeXS;
+        my $ss = JSON::MaybeXS::decode_json($ENV{ANSITABLE_CELL_STYLES});
         croak "ANSITABLE_CELL_STYLES must be a hash"
             unless ref($ss) eq 'HASH';
         for my $cell (keys %$ss) {
@@ -2517,7 +2517,7 @@ Can be used to set default value for C<border_style> attribute.
 
 Can be used to set default value for C<border_style> attribute.
 
-=head2 ANSITABLE_STYLE => JSON
+=head2 ANSITABLE_STYLE => str(json)
 
 Can be used to set table's most attributes. Value should be a JSON-encoded hash
 of C<< attr => val >> pairs. Example:
@@ -2530,7 +2530,7 @@ will display table with row separator lines after every row.
 
 Can be used to set default value for the C<wrap> column style.
 
-=head2 ANSITABLE_COLUMN_STYLES => JSON
+=head2 ANSITABLE_COLUMN_STYLES => str(json)
 
 Can be used to set per-column styles. Interpreted right before draw(). Value
 should be a JSON-encoded hash of C<< col => {style => val, ...} >> pairs.
@@ -2540,7 +2540,7 @@ Example:
 
 will display the bool columns as num and str instead.
 
-=head2 ANSITABLE_ROW_STYLES => JSON
+=head2 ANSITABLE_ROW_STYLES => str(json)
 
 Can be used to set per-row styles. Interpreted right before draw(). Value should
 be a JSON-encoded a hash of C<< row_num => {style => val, ...} >> pairs.
@@ -2550,7 +2550,7 @@ Example:
 
 will display the first row with blue background color and taller height.
 
-=head2 ANSITABLE_CELL_STYLES => JSON
+=head2 ANSITABLE_CELL_STYLES => str(json)
 
 Can be used to set per-cell styles. Interpreted right before draw(). Value
 should be a JSON-encoded a hash of C<< "row_num,col" => {style => val, ...} >>
@@ -2561,7 +2561,7 @@ pairs. Example:
 will display the second-on-the-left, second-on-the-top cell with green
 background color.
 
-=head2 ANSITABLE_STYLE_SETS => JSON
+=head2 ANSITABLE_STYLE_SETS => str(json)
 
 Can be used to apply style sets. Value should be a JSON-encoded array. Each
 element must be a style set name or a 2-element array containing style set name
