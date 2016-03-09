@@ -1,5 +1,10 @@
 Revision history for Text-ANSITable
 
+0.47    2016-03-09 (PERLANCAR)
+
+	- Replace JSON module with JSON::MaybeXS.
+
+
 0.46    2015-10-22 (PERLANCAR)
 
 	- Remove needless use of Module::Path::More.
