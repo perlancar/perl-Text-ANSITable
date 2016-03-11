@@ -270,17 +270,17 @@ sub BUILD {
     unless (defined $self->{wide}) {
         $self->{wide} = eval { require Text::ANSI::WideUtil; 1 } ? 1:0;
     }
-    require Text::ANSI::NonWideUtil;
-    $self->{_func_add_color_resets} = \&Text::ANSI::NonWideUtil::ta_add_color_resets;
+    require Text::ANSI::Util;
+    $self->{_func_add_color_resets} = \&Text::ANSI::Util::ta_add_color_resets;
     if ($self->{wide}) {
         require Text::ANSI::WideUtil;
         $self->{_func_length_height} = \&Text::ANSI::WideUtil::ta_mbswidth_height;
         $self->{_func_pad}           = \&Text::ANSI::WideUtil::ta_mbpad;
         $self->{_func_wrap}          = \&Text::ANSI::WideUtil::ta_mbwrap;
     } else {
-        $self->{_func_length_height} = \&Text::ANSI::NonWideUtil::ta_length_height;
-        $self->{_func_pad}           = \&Text::ANSI::NonWideUtil::ta_pad;
-        $self->{_func_wrap}          = \&Text::ANSI::NonWideUtil::ta_wrap;
+        $self->{_func_length_height} = \&Text::ANSI::Util::ta_length_height;
+        $self->{_func_pad}           = \&Text::ANSI::Util::ta_pad;
+        $self->{_func_wrap}          = \&Text::ANSI::Util::ta_wrap;
     }
 }
 
