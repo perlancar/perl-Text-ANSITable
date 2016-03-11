@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.48    2016-03-11 (PERLANCAR)
+
+	- No functional changes.
+
+	- Adjust to Text::ANSI::Util 0.22 (::NonWideUtil removed).
+
+
 0.47    2016-03-09 (PERLANCAR)
 
 	- Replace JSON module with JSON::MaybeXS.
