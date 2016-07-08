@@ -2035,10 +2035,13 @@ value for this style setting will be passed to L<Data::Unixish::Apply>'s
 C<apply()>, as the C<functions> argument. So it should be a single string (like
 C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
-See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
-functions are available. Functions of interest to formatting data include:
-C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ANSI::*> (in
-L<Data::Unixish::ANSI>), (among others).
+L<Data::Unixish::Apply> is an optional prerequisite, so you will need to install
+it separately if you need this feature.
+
+To see what functions are available, install L<App::dux> and then run C<dux -l>.
+Functions of interest to formatting data include: C<bool>, C<num>, C<sprintf>,
+C<sprintfn>, C<wrap>, C<ANSI::*> (in L<Data::Unixish::ANSI> distribution),
+(among others).
 
 
 =head1 CONDITIONAL STYLES
