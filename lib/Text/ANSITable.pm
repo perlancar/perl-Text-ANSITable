@@ -705,7 +705,7 @@ sub list_style_sets {
 sub _read_style_envs {
     my $self = shift;
 
-    next if $self->{_read_style_envs}++;
+    return if $self->{_read_style_envs}++;
 
     if ($ENV{ANSITABLE_COLUMN_STYLES}) {
         require JSON::MaybeXS;
