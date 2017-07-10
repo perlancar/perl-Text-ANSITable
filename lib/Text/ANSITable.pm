@@ -5,7 +5,7 @@ package Text::ANSITable;
 
 use 5.010001;
 use Carp;
-use Log::Any::IfLOG '$log';
+use Log::ger;
 use Moo;
 use experimental 'smartmatch';
 
