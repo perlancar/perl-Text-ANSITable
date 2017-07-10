@@ -36,4 +36,4 @@ print $t->draw;
 
 Sample output:
 
-# CODE: $ENV{COLUMNS}=80; system $^X, "-Ilib", "bin/ansitable-list-style-sets"; die "system() failed" if $?;
+# CODE: $ENV{COLUMNS}=80; system $^X, "-Ilib", "script/ansitable-list-style-sets"; die "system() failed" if $?;

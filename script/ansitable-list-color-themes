@@ -50,4 +50,4 @@ print $t->draw;
 
 Sample output:
 
-# CODE: system $^X, "-Ilib", "bin/ansitable-list-color-themes"; die "system() failed" if $?;
+# CODE: system $^X, "-Ilib", "script/ansitable-list-color-themes"; die "system() failed" if $?;

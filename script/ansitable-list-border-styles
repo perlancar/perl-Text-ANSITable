@@ -48,4 +48,4 @@ print $t->draw;
 
 Sample output:
 
-# CODE: $ENV{UTF8}=0; $ENV{BOX_CHARS}=0; $ENV{COLOR}=0; system $^X, "-Ilib", "bin/ansitable-list-border-styles"; die "system() failed" if $?;
+# CODE: $ENV{UTF8}=0; $ENV{BOX_CHARS}=0; $ENV{COLOR}=0; system $^X, "-Ilib", "script/ansitable-list-border-styles"; die "system() failed" if $?;
