@@ -11,6 +11,7 @@ use experimental 'smartmatch';
 
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
+require Win32::Console::ANSI if $^O =~ /Win/;
 
 my $ATTRS = [qw(
 
