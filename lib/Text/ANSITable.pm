@@ -698,7 +698,7 @@ sub list_style_sets {
     if ($detail) {
         return $all_sets;
     } else {
-        return sort keys %$all_sets;
+        return (sort keys %$all_sets);
     }
 }
 
@@ -1289,7 +1289,7 @@ sub draw_color_reset {
 # characters to print. n defaults to 1 if not specified.
 sub draw_border_char {
     my $self = shift;
-    my $args = shift if ref($_[0]) eq 'HASH';
+    my $args; $args = shift if ref($_[0]) eq 'HASH';
 
     $self->draw_str($self->{_draw}{set_line_draw_mode});
     while (my ($y, $x, $n) = splice @_, 0, 3) {

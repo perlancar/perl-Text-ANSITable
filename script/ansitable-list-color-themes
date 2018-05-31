@@ -9,7 +9,7 @@ use warnings;
 
 use Text::ANSITable;
 
-binmode(STDOUT, ":utf8");
+binmode(STDOUT, ":encoding(utf8)");
 
 my $t = Text::ANSITable->new;
 my $all_ct = $t->list_color_themes(1);
