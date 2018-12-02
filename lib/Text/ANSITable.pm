@@ -2186,10 +2186,10 @@ width is explicitly set to a positive value.
 
 =head2 use_color => BOOL
 
-Whether to output color. Default is taken from C<COLOR> environment variable, or
-detected via C<(-t STDOUT)>. If C<use_color> is set to 0, an attempt to use a
-colored color theme (i.e. anything that is not the C<no_color> theme) will
-result in an exception.
+Whether to output color. Default is taken from C<NO_COLOR> environment variable,
+C<COLOR> environment variable, or detected via C<(-t STDOUT)>. If C<use_color>
+is set to 0, an attempt to use a colored color theme (i.e. anything that is not
+the C<no_color> theme) will result in an exception.
 
 (In the future, setting C<use_color> to 0 might opt the module to use
 normal/plain string routines instead of the slower ta_* functions from
