@@ -2909,6 +2909,17 @@ L<Text::UnicodeTable::Simple>
 
 L<Table::Simple>
 
+=head2 Front-ends
+
+L<Text::Table::Any> and its CLI L<texttable> can use Text::ANSITable as one of
+the backends.
+
+=head2 Other related modules
+
+L<App::TextTableUtils> includes utilities like L<csv2ansitable> or
+L<json2ansitable> which can convert a CSV or array-of-array structure to a table
+rendered using Text::ANSITable.
+
 =head2 Other
 
 Unix command B<column> (e.g. C<column -t>).
