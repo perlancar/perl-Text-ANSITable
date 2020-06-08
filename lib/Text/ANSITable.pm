@@ -1,6 +1,8 @@
 package Text::ANSITable;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -21,7 +23,7 @@ my $ATTRS = [qw(
                   cell_rpad cell_vpad cell_tpad cell_bpad cell_fgcolor
                   cell_bgcolor cell_align cell_valign header_align header_valign
                   header_vpad header_tpad header_bpad header_fgcolor
-                  header_bgcolor color_theme_args border_style_args
+                  header_bgcolor border_style_args
 
           )];
 my $STYLES = $ATTRS;
