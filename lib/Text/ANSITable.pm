@@ -2580,6 +2580,40 @@ will display table with row separator lines after every row.
 
 =head2 General
 
+=head3 I don't see my data!
+
+This might be caused by you not defining columns first, e.g.:
+
+ my $t = Text::ANSITable->new;
+ $t->add_row([1,2,3]);
+ print $t->draw;
+
+You need to do this first before adding rows:
+
+ $t->columns(["col1", "col2", "col3"]);
+
+=head3 All the rows are the same!
+
+ my $t = Text::ANSITable->new;
+ $t->columns(["col"]);
+ my @row;
+ for (1..3) {
+     @row = ($_);
+     $t->add_row(\@row);
+ }
+ print $t->draw;
+
+will print:
+
+ col
+ 3
+ 3
+ 3
+
+You need to add row in this way instead of adding the same reference everytime:
+
+     $t->add_row([@row]);
+
 =head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be copy-pasted to my document.
 
  $t->use_utf8(0);
