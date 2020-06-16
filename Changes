@@ -1,3 +1,13 @@
+0.599_001  2020-06-16  Released-By: PERLANCAR; Released: no; Backward-Compatible: no
+
+        [border style]
+
+        - Now conforms to BorderStyle specification instead of the old
+          Border::Style. This has the following changes.
+
+        - [incompatible change] Remove attribute: 'border_style_args'. Arguments
+          now should be given to the border style class directly.
+
 0.501   2018-12-02  Released-By: PERLANCAR
 
 	- No functional changes.
