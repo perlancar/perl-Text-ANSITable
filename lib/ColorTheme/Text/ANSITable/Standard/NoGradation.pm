@@ -1,4 +1,4 @@
-package Text::ANSITable::ColorTheme::Default::nogradation;
+package Text::ANSITable::ColorTheme::Default::NoGradation;
 
 # AUTHORITY
 # DATE
@@ -11,7 +11,7 @@ use Text::ANSITable::ColorTheme::Default::gradation;
 use Function::Fallback::CoreOrPP qw(clone);
 
 our %THEME = %{ clone(\%Text::ANSITable::ColorTheme::Default::gradation::THEME) };
-$THEME{summary} = 'Default (no gradation, for black background)';
+$THEME{summary} = 'No gradation, for black background';
 
 delete $THEME{description};
 

@@ -1,4 +1,4 @@
-package Text::ANSITable::ColorTheme::Default::nogradation_whitebg;
+package ColorTheme::Text::ANSITable::Standard::NoGradationWhiteBG;
 
 # AUTHORITY
 # DATE

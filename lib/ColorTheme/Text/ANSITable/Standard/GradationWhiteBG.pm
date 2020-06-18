@@ -1,4 +1,4 @@
-package Text::ANSITable::ColorTheme::Default::gradation_whitebg;
+package ColorTheme::Text::ANSITable::Standard::GradationWhiteBG;
 
 # AUTHORITY
 # DATE
@@ -11,7 +11,7 @@ use Text::ANSITable::ColorTheme::Default::gradation;
 use Function::Fallback::CoreOrPP qw(clone);
 
 our %THEME = %{ clone(\%Text::ANSITable::ColorTheme::Default::gradation::THEME) };
-$THEME{summary} = 'Default (for terminal with white background)';
+$THEME{summary} = 'Gradation (for terminal with white background)';
 
 $THEME{args}{border1_fg}{default} = '000000';
 $THEME{args}{border2_fg}{default} = 'cccccc';

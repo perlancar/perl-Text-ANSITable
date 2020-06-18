@@ -1,4 +1,4 @@
-package Text::ANSITable::ColorTheme::Default::gradation;
+package ColorTheme::Text::ANSITable::Standard::Gradation;
 
 # AUTHORITY
 # DATE
@@ -10,8 +10,8 @@ use parent 'ColorThemeBase::Static::FromStructColors';
 use Color::RGB::Util qw(mix_2_rgb_colors);
 
 our %THEME = (
-    v => 1.1,
-    summary => 'Default (for terminal with black background)',
+    v => 2,
+    summary => 'Gradation border (for terminal with black background)',
     args => {
         border1_fg => {
             schema => 'color::rgb24*',
@@ -38,7 +38,7 @@ Colors will fade from the top color to bottom color. Also accept `border1_bg`
 and `border2_bg` to set background RGB colors.
 
 _
-    colors => {
+    items => {
         border      => sub {
             my ($self, $name, $args) = @_;
 
