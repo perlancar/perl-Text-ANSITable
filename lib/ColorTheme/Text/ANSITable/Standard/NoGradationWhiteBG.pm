@@ -7,10 +7,10 @@ package ColorTheme::Text::ANSITable::Standard::NoGradationWhiteBG;
 
 use parent 'ColorThemeBase::Static::FromStructColors';
 
-use Text::ANSITable::ColorTheme::Default::gradation_whitebg;
+use ColorTheme::Text::ANSITable::Standard::GradationWhiteBG;
 use Function::Fallback::CoreOrPP qw(clone);
 
-our %THEME = %{ clone(\%Text::ANSITable::ColorTheme::Default::gradation_whitebg::THEME) };
+our %THEME = %{ clone(\%ColorTheme::Text::ANSITable::Standard::GradationWhiteBG::THEME) };
 $THEME{summary} = 'Default (no gradation, for white background)';
 
 delete $THEME{description};
@@ -18,7 +18,7 @@ delete $THEME{description};
 delete $THEME{args}{border1};
 delete $THEME{args}{border2};
 
-$THEME{colors}{border} = '666666';
+$THEME{items}{border} = '666666';
 
 1;
 # ABSTRACT:

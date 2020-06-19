@@ -23,11 +23,11 @@ our %THEME = (
         },
         border1_bg => {
             schema => 'color::rgb24*',
-            default => 'ffffff',
+            default => undef,
         },
         border2_bg => {
             schema => 'color::rgb24*',
-            default => '444444',
+            default => undef,
         },
     },
     description => <<'_',
@@ -46,12 +46,12 @@ _
 
             my $pct = ($t->{_draw}{y}+1) / $t->{_draw}{table_height};
 
-            my $rgbf1 = $args->{border1_fg};
-            my $rgbf2 = $args->{border2_fg};
+            my $rgbf1 = $self->{args}{border1_fg};
+            my $rgbf2 = $self->{args}{border2_fg};
             my $rgbf  = mix_2_rgb_colors($rgbf1, $rgbf2, $pct);
 
-            my $rgbb1 = $args->{border1_bg};
-            my $rgbb2 = $args->{border2_bg};
+            my $rgbb1 = $self->{args}{border1_bg};
+            my $rgbb2 = $self->{args}{border2_bg};
             my $rgbb;
             if ($rgbb1 && $rgbb2) {
                 $rgbb = mix_2_rgb_colors($rgbb1, $rgbb2, $pct);

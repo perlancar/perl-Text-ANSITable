@@ -1,4 +1,4 @@
-package Text::ANSITable::ColorTheme::Default::NoGradation;
+package ColorTheme::Text::ANSITable::Standard::NoGradation;
 
 # AUTHORITY
 # DATE
@@ -7,10 +7,10 @@ package Text::ANSITable::ColorTheme::Default::NoGradation;
 
 use parent 'ColorThemeBase::Static::FromStructColors';
 
-use Text::ANSITable::ColorTheme::Default::gradation;
+use ColorTheme::Text::ANSITable::Standard::Gradation;
 use Function::Fallback::CoreOrPP qw(clone);
 
-our %THEME = %{ clone(\%Text::ANSITable::ColorTheme::Default::gradation::THEME) };
+our %THEME = %{ clone(\%ColorTheme::Text::ANSITable::Standard::Gradation::THEME) };
 $THEME{summary} = 'No gradation, for black background';
 
 delete $THEME{description};
@@ -18,7 +18,7 @@ delete $THEME{description};
 delete $THEME{args}{border1};
 delete $THEME{args}{border2};
 
-$THEME{colors}{border} = '666666';
+$THEME{items}{border} = '666666';
 
 1;
 # ABSTRACT:

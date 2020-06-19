@@ -7,21 +7,32 @@ use 5.010;
 use strict;
 use warnings;
 
+use Module::Load::Util qw(instantiate_class_with_optional_args);
 use Text::ANSITable;
 
 binmode(STDOUT, ":encoding(utf8)");
 
 my $t = Text::ANSITable->new;
-my $all_ct = $t->list_color_themes(1);
+my @all_ct = $t->list_color_themes;
+my %all_ctobj;
+for my $ctname (@all_ct) {
+    say "D:$ctname";
+    my $info = instantiate_class_with_optional_args({ns_prefix=>"ColorTheme", construct=>0}, $ctname);
+    my $class = $info->{class};
+    my $struct = $class->get_struct;
+    my $args = ($struct->{examples} && @{ $struct->{examples} } ? $struct->{examples}[0]{args} : undef) // {};
+    $all_ctobj{$ctname} = instantiate_class_with_optional_args({}, [$class, $args]);
+}
 
-my $chosen_ct = $ARGV[0] // $t->{color_theme}{name};
+my $chosen_ct = $ARGV[0] // $t->color_theme;
 
 $t->columns(['Name', 'Summary']);
-for my $name (sort keys %$all_ct) {
-    my $ct = $all_ct->{$name};
+for my $name (@all_ct) {
+    my $ctobj = $all_ctobj{$name};
+    my $struct = $ctobj->get_struct;
     my $selected = $chosen_ct eq $name;
 
-    $t->add_row([$name . ($selected ? " (*)" : ""), $ct->{summary}],
+    $t->add_row([$name . ($selected ? " (*)" : ""), $struct->{summary}],
                 {fgcolor=>($selected && $t->use_color ? 'aaaa00' : undef)});
 }
 

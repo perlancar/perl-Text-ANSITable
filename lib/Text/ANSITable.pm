@@ -11,6 +11,7 @@ use Log::ger;
 use Moo;
 use experimental 'smartmatch';
 
+use ColorThemeUtil::ANSI qw(item_color_to_ansi);
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
 require Win32::Console::ANSI if $^O =~ /Win/;
@@ -55,12 +56,12 @@ has border_style => (
     },
 );
 
-has xcolor_theme => (
+has color_theme => (
     is => 'rw',
     trigger => sub {
         require Module::Load::Util;
         my ($self, $val) = @_;
-        $self->{border_style_obj} =
+        $self->{color_theme_obj} =
             Module::Load::Util::instantiate_class_with_optional_args(
                 {ns_prefix=>'ColorTheme'}, $val);
     },
@@ -194,8 +195,15 @@ has header_bgcolor => (
     is      => 'rw',
 );
 
-with 'Color::Theme::Role::ANSI';
 with 'Term::App::Role::Attrs';
+
+sub _color_theme_item_color_to_ansi {
+    my ($self, $item, $args, $is_bg) = @_;
+    item_color_to_ansi(
+        ($self->{color_theme_obj}->get_item_color($item, $args) // undef), # because sometimes get_item_color() might return an empty list
+        $is_bg)
+        // '';
+}
 
 sub BUILD {
     my ($self, $args) = @_;
@@ -225,10 +233,6 @@ sub BUILD {
             $self->{$k} = $v;
         }
     }
-
-    # set "pseudo"-attributes, they are not declared using 'has' so Moo doesn't
-    # set them and we need to set them manually
-    if ($args->{color_theme}) { $self->color_theme($args->{color_theme}) }
 
     # pick a default border style
     unless ($self->{border_style}) {
@@ -278,14 +282,14 @@ sub BUILD {
         } elsif ($self->use_color) {
             my $bg = $self->detect_terminal->{default_bgcolor} // '';
             if ($self->color_depth >= 2**24) {
-                $ct = 'Default::default_gradation' .
-                    ($bg eq 'ffffff' ? '_whitebg' : '');
+                $ct = 'Text::ANSITable::Standard::Gradation' .
+                    ($bg eq 'ffffff' ? 'WhiteBG' : '');
             } else {
-                $ct = 'Default::default_nogradation' .
-                    ($bg eq 'ffffff' ? '_whitebg' : '');;
+                $ct = 'Text::ANSITable::Standard::NoGradation' .
+                    ($bg eq 'ffffff' ? 'WhiteBG' : '');;
             }
         } else {
-            $ct = 'Default::no_color';
+            $ct = 'NoColor';
         }
         $self->color_theme($ct);
     }
@@ -702,6 +706,20 @@ sub list_border_styles {
     @res;
 }
 
+sub list_color_themes {
+    require Module::List;
+    my ($self) = @_;
+
+    my $mods = Module::List::list_modules(
+        "ColorTheme::", {list_modules=>1, recurse=>1});
+    my @res;
+    for (sort keys %$mods) {
+        s/\AColorTheme:://;
+        push @res, $_;
+    }
+    @res;
+}
+
 sub list_style_sets {
     require Module::List;
     require Module::Load;
@@ -918,7 +936,6 @@ sub _detect_column_types {
 
     my $cols = $self->{columns};
     my $rows = $self->{rows};
-    my $ct   = $self->{color_theme};
 
     my $fcol_detect = [];
     my %seen;
@@ -971,21 +988,21 @@ sub _detect_column_types {
         if ($type eq 'bool') {
             $res->{align}   = 'center';
             $res->{valign}  = 'center';
-            $res->{fgcolor} = $ct->{colors}{bool_data};
+            $res->{fgcolor} = $self->{color_theme_obj}->get_item_color('bool_data');
             $res->{formats} = [[bool => {style => $self->{use_utf8} ?
                                              "check_cross" : "Y_N"}]];
         } elsif ($type eq 'date') {
             $res->{align}   = 'middle';
-            $res->{fgcolor} = $ct->{colors}{date_data};
+            $res->{fgcolor} = $self->{color_theme_obj}->get_item_color('date_data');
             $res->{formats} = [['date' => {}]];
         } elsif ($type =~ /\A(num|float|int)\z/) {
             $res->{align}   = 'right';
-            $res->{fgcolor} = $ct->{colors}{num_data};
+            $res->{fgcolor} = $self->{color_theme_obj}->get_item_color('num_data');
             if (($subtype//"") eq 'pct') {
                 $res->{formats} = [[num => {style=>'percent'}]];
             }
         } else {
-            $res->{fgcolor} = $ct->{colors}{str_data};
+            $res->{fgcolor} = $self->{color_theme_obj}->get_item_color('str_data');
             $res->{wrap}    = $ENV{WRAP} // 1;
         }
     }
@@ -1302,13 +1319,13 @@ sub draw_str {
 
 sub draw_theme_color {
     my $self = shift;
-    my $c = $self->get_theme_color_as_ansi(@_);
+    my $c = $self->_color_theme_item_color_to_ansi(@_);
     $self->draw_str($c) if length($c);
 }
 
 sub get_color_reset {
     my $self = shift;
-    return "" if $self->{color_theme}{no_color};
+    return "" if $self->{color_theme_obj}->get_struct->{_no_color};
     "\e[0m";
 }
 
@@ -1333,10 +1350,10 @@ sub draw_border_char {
             # save some CPU cycles
         } elsif ($args) {
             $self->draw_theme_color('border',
-                                    {border=>[$y, $x, $n], %$args});
+                                    {table=>$self, border=>[$y, $x, $n], %$args});
         } else {
             $self->draw_theme_color('border',
-                                    {border=>[$y, $x, $n]});
+                                    {table=>$self, border=>[$y, $x, $n]});
         }
         $self->draw_str($self->{border_style_obj}->get_border_char($y, $x, $n));
         $self->draw_color_reset;
@@ -1401,35 +1418,33 @@ sub _get_header_cell_lines {
 
     my $ct = $self->{color_theme};
 
+    my $tmp;
     my $fgcolor;
     if (defined $self->{header_fgcolor}) {
-        $fgcolor = $self->theme_color_to_ansi($self->{header_fgcolor});
+        $fgcolor = item_color_to_ansi($self->{header_fgcolor});
     } elsif (defined $self->{cell_fgcolor}) {
-        $fgcolor = $self->theme_color_to_ansi($self->{cell_fgcolor});
+        $fgcolor = item_color_to_ansi($self->{cell_fgcolor});
     #} elsif (defined $self->{_draw}{fcol_detect}[$i]{fgcolor}) {
-    #    $fgcolor = $self->themecol2ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
-    } elsif (defined $ct->{colors}{header}) {
-        $fgcolor = $self->get_theme_color_as_ansi('header');
-    } elsif (defined $ct->{colors}{cell}) {
-        $fgcolor = $self->get_theme_color_as_ansi('cell');
+    #    $fgcolor = item_color_to_ansi($self->{_draw}{fcol_detect}[$i]{fgcolor});
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('header')) {
+        $fgcolor = $tmp;
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell')) {
+        $fgcolor = $tmp;
     } else {
         $fgcolor = "";
     }
 
     my $bgcolor;
     if (defined $self->{header_bgcolor}) {
-        $bgcolor = $self->theme_color_to_ansi($self->{header_bgcolor},
-                                              undef, 1);
+        $bgcolor = item_color_to_ansi($self->{header_bgcolor}, 'bg');
     } elsif (defined $self->{cell_bgcolor}) {
-        $bgcolor = $self->theme_color_to_ansi($self->{cell_bgcolor},
-                                              undef, 1);
+        $bgcolor = item_color_to_ansi($self->{cell_bgcolor}, 'bg');
     } elsif (defined $self->{_draw}{fcol_detect}[$i]{bgcolor}) {
-        $fgcolor = $self->theme_color_to_ansi($self->{_draw}{fcol_detect}[$i]{bgcolor},
-                                              undef, 1);
-    } elsif (defined $ct->{colors}{header_bg}) {
-        $bgcolor = $self->get_theme_color_as_ansi('header_bg');
-    } elsif (defined $ct->{colors}{cell_bg}) {
-        $bgcolor = $self->get_theme_color_as_ansi('cell_bg');
+        $bgcolor = item_color_to_ansi($self->{_draw}{fcol_detect}[$i]{bgcolor}, 'bg');
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('header_bg', undef, 'bg')) {
+        $bgcolor = $tmp;
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell_bg', undef, 'bg')) {
+        $bgcolor = $tmp;
     } else {
         $bgcolor = "";
     }
@@ -1468,40 +1483,41 @@ sub _get_data_cell_lines {
     my $ct   = $self->{color_theme};
     my $oy   = $self->{_draw}{frow_orig_indices}[$y];
     my $cell = $self->{_draw}{frows}[$y][$x];
-    my $args = {row_num=>$y, col_num=>$x, data=>$cell,
+    my $args = {table=>$self, row_num=>$y, col_num=>$x, data=>$cell,
                 orig_data=>$self->{rows}[$oy][$x]};
 
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'fgcolor'))) {
-        $fgcolor = $self->theme_color_to_ansi($tmp, $args);
+        say "D0";
+        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'fgcolor'))) {
-        $fgcolor = $self->theme_color_to_ansi($tmp, $args);
+        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'fgcolor'))) {
-        $fgcolor = $self->theme_color_to_ansi($tmp, $args);
+        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
-        $fgcolor = $self->theme_color_to_ansi($tmp, $args);
+        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
-        $fgcolor = $self->theme_color_to_ansi($tmp, $args);
-    } elsif (defined $ct->{colors}{cell}) {
-        $fgcolor = $self->get_theme_color_as_ansi('cell', $args);
+        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell', $args)) {
+        $fgcolor = $tmp;
     } else {
         $fgcolor = "";
     }
 
     my $bgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'bgcolor'))) {
-        $bgcolor = $self->theme_color_to_ansi($tmp, $args, 1);
+        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'bgcolor'))) {
-        $bgcolor = $self->theme_color_to_ansi($tmp, $args, 1);
+        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'bgcolor'))) {
-        $bgcolor = $self->theme_color_to_ansi($tmp, $args, 1);
+        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
-        $bgcolor = $self->theme_color_to_ansi($tmp, $args, 1);
+        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
-        $bgcolor = $self->theme_color_to_ansi($tmp, $args, 1);
-    } elsif (defined $ct->{colors}{cell_bg}) {
-        $bgcolor = $self->get_theme_color_as_ansi('cell_bg', $args);
+        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+    } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell_bg', $args, 'bg')) {
+        $bgcolor = $tmp;
     } else {
         $bgcolor = "";
     }
@@ -1687,7 +1703,7 @@ sub draw {
 1;
 #ABSTRACT: Create nice formatted tables using extended ASCII and ANSI colors
 
-=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset)$
 
 =head1 SYNOPSIS
 
@@ -1701,7 +1717,7 @@ sub draw {
 
  # set styles
  $t->border_style('UTF8::SingleLineBold');  # if not, a nice default is picked
- $t->color_theme('Default::sepia');  # if not, a nice default is picked
+ $t->color_theme('Text::ANSITable::Standard::NoGradation');  # if not, a nice default is picked
 
  # fill data
  $t->columns(["name"       , "color" , "price"]);
@@ -1797,28 +1813,34 @@ To create a new border style, see L<BorderStyle>.
 
 =head1 COLOR THEMES
 
-To list available color themes:
+To list available color themes, just list the C<ColorTheme::*> modules (usually
+you want to use color themes specifically created for Text::ANSITable in
+C<ColorTheme::Text::ANSITable::*> namespace). You can use the provided method:
 
  say $_ for $t->list_color_themes;
 
-Or you can also run the provided L<ansitable-list-color-themes> script. Or you
-can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
-where color themes are searched.
+Or you can also run the provided L<ansitable-list-color-themes> script.
 
-To choose a color theme, either set the C<color_theme> attribute to an available
-color theme or a color theme specification directly.
+To choose a color theme, set the C<color_theme> attribute to an available color
+theme (which is the ColorTheme::* module name without the prefix) with optional
+arguments:
 
- $t->color_theme("Default::default_nogradation");
- $t->color_theme("Foo::bar");    # dies, no such color theme
- $t->color_theme({ ... });  # set specification directly
+ # during construction
+ my $t = Text::ANSITable->new(
+     ...
+     color_theme => "Text::ANSITable::Standard::NoGradation",
+     ...
+ );
+
+ # after the object is constructed
+ $t->color_theme("Text::ANSITable::Standard::NoGradation");
+ $t->color_theme(["Lens::Darken", {theme=>"Text::ANSITable::Standard::NoGradation"}]);
 
 If no color theme is selected explicitly, a nice default will be chosen. You can
 also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
 
-To create a new color theme, create a module under
-C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
-modules for example, like L<Text::ANSITable::ColorTheme::Default>. For more
-about color themes, refer to L<Color::Theme::Role>.
+To create a new color theme, see L<ColorTheme> and an existing
+C<ColorTheme::Text::ANSITable::*> module.
 
 
 =head1 COLUMN WIDTHS
@@ -2260,31 +2282,13 @@ Whether to support wide characters. The default is to check for the existence of
 L<Text::ANSI::WideUtil> (an optional prereq). You can explicitly enable or
 disable wide-character support here.
 
-=head2 border_style => HASH
+=head2 border_style => STR
 
-Border style specification to use.
+Border style name to use.
 
-You can set this attribute's value with a specification or border style name.
-See L<"/BORDER STYLES"> for more details.
+=head2 color_theme => STR
 
-=head2 border_style_args => HASH
-
-Some border styles can accept arguments. You can set it here. See the
-corresponding border style's documentation for information on what arguments it
-accepts.
-
-=head2 color_theme => HASH
-
-Color theme specification to use.
-
-You can set this attribute's value with a specification or color theme name. See
-L<"/COLOR THEMES"> for more details.
-
-=head2 color_theme_args => HASH
-
-Some color themes can accept arguments. You can set it here. See the
-corresponding color theme's documentation for information on what arguments it
-accepts.
+Color theme name to use.
 
 =head2 show_header => BOOL (default: 1)
 
@@ -2384,12 +2388,12 @@ Constructor.
 =head2 $t->list_border_styles => LIST
 
 Return the names of available border styles. Border styles will be searched in
-C<Text::ANSITable::BorderStyle::*> modules.
+C<BorderStyle::*> modules.
 
 =head2 $t->list_color_themes => LIST
 
 Return the names of available color themes. Color themes will be searched in
-C<Text::ANSITable::ColorTheme::*> modules.
+C<ColorTheme::*> modules.
 
 =head2 $t->list_style_sets => LIST
 
@@ -2617,10 +2621,10 @@ will display table with row separator lines after every row.
  $t->use_utf8(0);
  $t->use_box_chars(0);
  $t->use_color(0);
- $t->border_style('Default::single_ascii');
+ $t->border_style('ASCII::SingleLine');
 
 and you're good to go. Alternatively you can set environment UTF8=0,
-BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
+BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=ASCII::SingleLine.
 
 =head3 Why am I getting 'Wide character in print' warning?
 
@@ -2816,11 +2820,11 @@ L</"STYLE SETS"> for more details.
 =head3 How to hide borders?
 
 There is currently no C<show_border> attribute. Choose border styles like
-C<Default::space_ascii> or C<Default::none_utf8>:
+C<ASCII::Space>, C<ASCII::None>, C<UTF8::None>:
 
- $t->border_style("Default::none");
+ $t->border_style("UTF8::None");
 
-=head3 Why are there 'none_ascii' as well 'none_utf8' and 'none_boxchar' border styles?
+=head3 Why are there 'ASCII::None' as well 'UTF8::None' and 'BoxChar::None' border styles?
 
 Because of the row separator, that can still be drawn if C<add_row_separator()>
 is used. See next question.
@@ -2916,20 +2920,21 @@ Or, you can use the L<Text::ANSITable::StyleSet::AltRow> style set:
 
 =head1 SEE ALSO
 
-=head2 Related to Text::ANSITable family
+=head2 Border styles
 
-For collections of border styles, search for C<Text::ANSITable::BorderStyle::*>
-modules.
+For collections of border styles, search for C<BorderStyle::*> modules.
 
-For collections of color themes, search for C<Text::ANSITable::ColorTheme::*>
-modules.
+=head2 Color themes
+
+For collections of color themes, search for C<ColorTheme::*> modules.
 
 =head2 Other table-formatting CPAN modules
 
-L<Text::ASCIITable> is one of the most popular table-formatting module. There
-are a couple of "extensions" for Text::ASCIITable: L<Text::ASCIITable::TW>,
-L<Text::ASCIITable::Wrap>; Text::ANSITable can be an alternative for all those
-modules since it can already handle wide-characters, multiline text in cells.
+L<Text::ASCIITable> is one of the most popular table-formatting modules on CPAN.
+There are a couple of "extensions" for Text::ASCIITable:
+L<Text::ASCIITable::TW>, L<Text::ASCIITable::Wrap>; Text::ANSITable can be an
+alternative for all those modules since it can already handle wide-characters as
+well as multiline text in cells.
 
 L<Text::TabularDisplay>
 
@@ -2940,6 +2945,8 @@ L<Text::SimpleTable>
 L<Text::UnicodeTable::Simple>
 
 L<Table::Simple>
+
+L<Acme::CPANModules::TextTable> catalogs text table modules.
 
 =head2 Front-ends
 
