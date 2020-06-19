@@ -44,6 +44,17 @@ my $CELL_STYLES = [qw(
 
                 )];
 
+has border_style => (
+    is => 'rw',
+    trigger => sub {
+        require Module::Load::Util;
+        my ($self, $val) = @_;
+        $self->{border_style_obj} =
+            Module::Load::Util::instantiate_class_with_optional_args(
+                {ns_prefix=>'BorderStyle'}, $val);
+    },
+);
+
 has columns => (
     is      => 'rw',
     default => sub { [] },
@@ -172,7 +183,6 @@ has header_bgcolor => (
     is      => 'rw',
 );
 
-with 'Border::Style::Role';
 with 'Color::Theme::Role::ANSI';
 with 'Term::App::Role::Attrs';
 
@@ -207,7 +217,6 @@ sub BUILD {
 
     # set "pseudo"-attributes, they are not declared using 'has' so Moo doesn't
     # set them and we need to set them manually
-    if ($args->{border_style}) { $self->border_style($args->{border_style}) }
     if ($args->{color_theme}) { $self->color_theme($args->{color_theme}) }
 
     # pick a default border style
@@ -224,7 +233,7 @@ sub BUILD {
         my $linux_vc = $emu_eng eq 'linux' && !defined($ENV{UTF8});
         if ($linux_vc) {
             $use_utf8 = 1;
-            $bs = 'Default::singleo_utf8';
+            $bs = 'UTF8::SingleLineOuterOnly';
         }
         # use statement modifier style to avoid block and make local work
         local $self->{use_utf8} = 1 if $linux_vc;
@@ -240,11 +249,11 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
         } elsif ($use_utf8) {
-            $bs //= 'Default::bricko';
+            $bs //= 'UTF8::BrickOuterOnly';
         } elsif ($self->use_box_chars) {
-            $bs = 'Default::singleo_boxchar';
+            $bs = 'BoxChar::SingleLineOuterOnly';
         } else {
-            $bs = 'Default::singleo_ascii';
+            $bs = 'ASCII::SingleLineOuterOnly';
         }
 
         $self->border_style($bs);
@@ -1124,8 +1133,8 @@ sub _calc_table_width_height {
     my $frow_heights = $self->{_draw}{frow_heights};
 
     my $w = 0;
-    $w += 1 if length($self->get_border_char(3, 0));
-    my $has_vsep = length($self->get_border_char(3, 1));
+    $w += 1 if length($self->{border_style_obj}->get_border_char(3, 0));
+    my $has_vsep = length($self->{border_style_obj}->get_border_char(3, 1));
     for my $i (0..@$cols-1) {
         next unless $cols->[$i] ~~ $fcols;
         $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
@@ -1133,24 +1142,24 @@ sub _calc_table_width_height {
             $w += 1 if $has_vsep;
         }
     }
-    $w += 1 if length($self->get_border_char(3, 2));
+    $w += 1 if length($self->{border_style_obj}->get_border_char(3, 2));
     $self->{_draw}{table_width}  = $w;
 
     my $h = 0;
-    $h += 1 if length($self->get_border_char(0, 0)); # top border line
+    $h += 1 if length($self->{border_style_obj}->get_border_char(0, 0)); # top border line
     $h += $self->{header_tpad} // $self->{header_vpad} //
         $self->{cell_tpad} // $self->{cell_vpad};
     $h += $self->{_draw}{header_height} // 0;
     $h += $self->{header_bpad} // $self->{header_vpad} //
         $self->{cell_bpad} // $self->{cell_vpad};
-    $h += 1 if length($self->get_border_char(2, 0));
+    $h += 1 if length($self->{border_style_obj}->get_border_char(2, 0));
     for my $i (0..@$frows-1) {
         $h += ($frow_tpads->[$i] // 0) +
             ($frow_heights->[$i] // 0) +
                 ($frow_bpads->[$i] // 0);
         $h += 1 if $self->_should_draw_row_separator($i);
     }
-    $h += 1 if length($self->get_border_char(5, 0));
+    $h += 1 if length($self->{border_style_obj}->get_border_char(5, 0));
     $self->{_draw}{table_height}  = $h;
 }
 
@@ -1285,15 +1294,14 @@ sub draw_color_reset {
 }
 
 # draw border character(s). drawing border character involves setting border
-# color, setting drawing mode (for boxchar styles), aside from drawing the
-# actual characters themselves. arguments are list of (y, x, n) tuples where y
-# and x are the row and col number of border character, n is the number of
-# characters to print. n defaults to 1 if not specified.
+# color, aside from drawing the actual characters themselves. arguments are list
+# of (y, x, n) tuples where y and x are the row and col number of border
+# character, n is the number of characters to print. n defaults to 1 if not
+# specified.
 sub draw_border_char {
     my $self = shift;
     my $args; $args = shift if ref($_[0]) eq 'HASH';
 
-    $self->draw_str($self->{_draw}{set_line_draw_mode});
     while (my ($y, $x, $n) = splice @_, 0, 3) {
         $n //= 1;
         if (!$self->{use_color}) {
@@ -1305,10 +1313,9 @@ sub draw_border_char {
             $self->draw_theme_color('border',
                                     {border=>[$y, $x, $n]});
         }
-        $self->draw_str($self->get_border_char($y, $x, $n));
+        $self->draw_str($self->{border_style_obj}->get_border_char($y, $x, $n));
         $self->draw_color_reset;
     }
-    $self->draw_str($self->{_draw}{reset_line_draw_mode});
 }
 
 sub _should_draw_row_separator {
@@ -1513,13 +1520,6 @@ sub draw {
     $self->{_draw}{buf} = []; # output buffer
     $self->{_draw}{y} = 0; # current line
 
-    # ansi codes to set and reset line-drawing mode.
-    {
-        my $bs = $self->{border_style};
-        $self->{_draw}{set_line_draw_mode}   = $bs->{box_chars} ? "\e(0" : "";
-        $self->{_draw}{reset_line_draw_mode} = $bs->{box_chars} ? "\e(B" : "";
-    }
-
     my $cols  = $self->{columns};
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
@@ -1532,7 +1532,7 @@ sub draw {
 
     # draw border top line
     {
-        last unless length($self->get_border_char(0, 0));
+        last unless length($self->{border_style_obj}->get_border_char(0, 0));
         my @b;
         push @b, 0, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -1577,7 +1577,7 @@ sub draw {
     }
 
     # draw header-data row separator
-    if ($self->{show_header} && length($self->get_border_char(2, 0))) {
+    if ($self->{show_header} && length($self->{border_style_obj}->get_border_char(2, 0))) {
         my @b;
         push @b, 2, 0, 1;
         for my $i (0..@$fcols-1) {
@@ -1642,7 +1642,7 @@ sub draw {
 
     # draw border bottom line
     {
-        last unless length($self->get_border_char(5, 0));
+        last unless length($self->{border_style_obj}->get_border_char(5, 0));
         my @b;
         push @b, 5, 0, 1;
         for my $i (0..@$fcols-1) {
