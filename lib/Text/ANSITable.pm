@@ -1498,7 +1498,7 @@ sub _get_data_cell_lines {
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
         $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
-        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+        $fgcolor = item_color_to_ansi($tmp);
     } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell', $args)) {
         $fgcolor = $tmp;
     } else {
@@ -1515,7 +1515,7 @@ sub _get_data_cell_lines {
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
         $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
-        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+        $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell_bg', $args, 'bg')) {
         $bgcolor = $tmp;
     } else {
