@@ -1,12 +1,15 @@
 #!perl
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010;
 use strict;
 use warnings;
 
+use Module::Load::Util qw(instantiate_class_with_optional_args);
 use Text::ANSITable;
 
 binmode(STDOUT, ":encoding(utf8)");
@@ -17,18 +20,27 @@ if ($ARGV[0]) {
     $t->border_style($ARGV[0]);
 }
 
-my $all_bs = $t->list_border_styles(1);
+my @all_bs = $t->list_border_styles;
+my %all_bsobj;
+for my $bsname (@all_bs) {
+    my $info = instantiate_class_with_optional_args({ns_prefix=>"BorderStyle", construct=>0}, $bsname);
+    my $class = $info->{class};
+    my $struct = $class->get_struct;
+    my $args = ($struct->{examples} && @{ $struct->{examples} } ? $struct->{examples}[0]{args} : undef) // {};
+    $all_bsobj{$bsname} = instantiate_class_with_optional_args({}, [$class, $args]);
+}
 
 $t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
 my $utf8; # we sort by not utf8 and then utf8, just to demonstrate add_row_separator
-for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) || $a cmp $b} keys %$all_bs) {
-    my $bs = $all_bs->{$name};
-    my $selected = $name eq $t->border_style->{name};
+for my $name (sort {($all_bsobj{$a}->get_struct->{utf8} ? 1:0)<=>($all_bsobj{$b}->get_struct->{utf8} ? 1:0) || $a cmp $b} @all_bs) {
+    my $bsobj = $all_bsobj{$name};
+    my $struct = $bsobj->get_struct;
+    my $selected = $name eq $t->border_style;
     $t->add_row(
-        [$name . ($selected ? " (*)" : ""), $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
+        [$name . ($selected ? " (*)" : ""), $struct->{summary}, $struct->{box_chars} ? 1:0, $struct->{utf8} ? 1:0],
         {fgcolor=>$selected && $t->use_color ? "aaaa00" : undef});
 
-    if (!$utf8 && $bs->{utf8}) {
+    if (!$utf8 && $struct->{utf8}) {
         $t->add_row_separator;
         $utf8++;
     }

@@ -55,6 +55,17 @@ has border_style => (
     },
 );
 
+has xcolor_theme => (
+    is => 'rw',
+    trigger => sub {
+        require Module::Load::Util;
+        my ($self, $val) = @_;
+        $self->{border_style_obj} =
+            Module::Load::Util::instantiate_class_with_optional_args(
+                {ns_prefix=>'ColorTheme'}, $val);
+    },
+);
+
 has columns => (
     is      => 'rw',
     default => sub { [] },
@@ -675,6 +686,20 @@ sub apply_style_set {
     my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
     my $obj = "Text::ANSITable::StyleSet::$name"->new(%args);
     $obj->apply($self);
+}
+
+sub list_border_styles {
+    require Module::List;
+    my ($self) = @_;
+
+    my $mods = Module::List::list_modules(
+        "BorderStyle::", {list_modules=>1, recurse=>1});
+    my @res;
+    for (sort keys %$mods) {
+        s/\ABorderStyle:://;
+        push @res, $_;
+    }
+    @res;
 }
 
 sub list_style_sets {
@@ -1675,7 +1700,7 @@ sub draw {
  my $t = Text::ANSITable->new;
 
  # set styles
- $t->border_style('Default::bold');  # if not, a nice default is picked
+ $t->border_style('UTF8::SingleLineBold');  # if not, a nice default is picked
  $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
  # fill data
@@ -1739,30 +1764,35 @@ fine-grained options to customize appearance.
 
 =head1 BORDER STYLES
 
-To list available border styles:
+To list available border styles, just list the C<BorderStyle::*> modules. You
+can use the provided method:
 
  say $_ for $t->list_border_styles;
 
 Or you can also try out borders using the provided
-L<ansitable-list-border-styles> script. Or, you can also view the documentation
-for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
-searched.
+L<ansitable-list-border-styles> script.
 
-To choose border style, either set the C<border_style> attribute to an available
-border style or a border specification directly.
+To choose border style, set the C<border_style> attribute to an available border
+style name (which is the BorderStyle::* module name without the prefix) with
+optional arguments.
 
- $t->border_style("Default::singleh_boxchar");
- $t->border_style("Foo::bar");   # dies, no such border style
- $t->border_style({ ... }); # set specification directly
+ # during construction
+ my $t = Text::ANSITable->new(
+     ...
+     border_style => "UTF8::SingleLineBold",
+     ...
+ );
+
+ # after the object is constructed
+ $t->border_style("UTF8::SingleLineBold");
+ $t->border_style("Test::CustomChar=character,x");
+ $t->border_style(["Test::CustomChar", {character=>"x"}]);
 
 If no border style is selected explicitly, a nice default will be chosen. You
 can also set the C<ANSITABLE_BORDER_STYLE> environment variable to set the
 default.
 
-To create a new border style, create a module under
-C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
-modules for example, like L<Text::ANSITable::BorderStyle::Default>. For more
-about border styles, refer to L<Border::Style::Role>.
+To create a new border style, see L<BorderStyle>.
 
 
 =head1 COLOR THEMES
