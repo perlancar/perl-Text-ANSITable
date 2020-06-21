@@ -1,4 +1,10 @@
-0.599_001  2020-06-16  Released-By: PERLANCAR; Released: no; Backward-Compatible: no
+0.599_002  2020-06-20  Released-By: PERLANCAR
+
+        - [bugfix] Didn't set ANSI colors correctly (affected row/column/cell
+          styles and cell_fgcolor/cell_bgcolor).
+
+
+0.599_001  2020-06-16  Released-By: PERLANCAR; Backward-Compatible: no
 
         [border style]
 
