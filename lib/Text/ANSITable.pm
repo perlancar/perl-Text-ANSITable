@@ -1489,13 +1489,13 @@ sub _get_data_cell_lines {
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'fgcolor'))) {
-        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+        $fgcolor = item_color_to_ansi($tmp);
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'fgcolor'))) {
-        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+        $fgcolor = item_color_to_ansi($tmp);
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'fgcolor'))) {
-        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+        $fgcolor = item_color_to_ansi($tmp);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
-        $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
+        $fgcolor = item_color_to_ansi($tmp);
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{fgcolor})) {
         $fgcolor = item_color_to_ansi($tmp);
     } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell', $args)) {
@@ -1506,13 +1506,13 @@ sub _get_data_cell_lines {
 
     my $bgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'bgcolor'))) {
-        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+        $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'bgcolor'))) {
-        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+        $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif (defined ($tmp = $self->get_eff_column_style($x, 'bgcolor'))) {
-        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+        $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
-        $bgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args, 'bg');
+        $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif (defined ($tmp = $self->{_draw}{fcol_detect}[$x]{bgcolor})) {
         $bgcolor = item_color_to_ansi($tmp, 'bg');
     } elsif ($tmp = $self->_color_theme_item_color_to_ansi('cell_bg', $args, 'bg')) {
