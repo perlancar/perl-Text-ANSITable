@@ -1489,7 +1489,6 @@ sub _get_data_cell_lines {
     my $tmp;
     my $fgcolor;
     if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'fgcolor'))) {
-        say "D0";
         $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
     } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'fgcolor'))) {
         $fgcolor = $self->_color_theme_item_color_to_ansi($tmp, $args);
