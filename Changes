@@ -1,3 +1,75 @@
+0.599_002  2020-06-20  Released-By: PERLANCAR
+
+        - [bugfix] Didn't set ANSI colors correctly (affected row/column/cell
+          styles and cell_fgcolor/cell_bgcolor).
+
+
+0.599_001  2020-06-16  Released-By: PERLANCAR; Backward-Compatible: no
+
+        [border style]
+
+        - Now conforms to BorderStyle specification (v2) instead of the old
+          Border::Style. The new specification makes each border style a proper
+          class on its own instead of just a data structure, so some methods are
+          moved there instead of merged into Text::ANSITable. This causes the
+          following changes.
+
+        - [incompatible change][removed] Remove attribute 'border_style_args'.
+          Arguments now should be given to the border style class directly (see
+          next change item).
+
+        - [incompatible change] Attribute 'border_style' now must be a string
+          (module name like 'ASCII::SingleLine', or a module name followed by a
+          list of comma-separated arguments a la Perl's -M like
+          'Test::CustomChar=character,o') or a 2-element array containing module
+          name and arguments, e.g. ['ASCII::SingleLine', []] or
+          ['Test::CustomChar', {character=>'o'}]. 'border_style' may no longer
+          be a hash containing border style structure. You will have to create a
+          proper BorderStyle::* module if you want your own custom border style.
+
+        - [incompatible change][removed] Remove methods get_border_style and
+          get_border_char. The border style object (stored in 'border_style_obj'
+          object hash key) now sports its own get_border_char() method.
+
+        - [incompatible change] Border style names changed. See
+          BorderStyles-Standard distribution for a collection of border styles.
+          The default border style is now named 'UTF8::BrickOuterOnly' (instead
+          of the old name 'Default::bricko'). You can still use the
+          'ansitable-list-border-styles' script or see the individual border
+          style class to see how a border style looks.
+
+        [color theme]
+
+        - Now conforms to ColorTheme specification (v2) instead of the old
+          Color::Theme. The new specification makes each color theme a proper
+          class on its own instead of just a data structure, so some methods are
+          moved there instead of merged into Text::ANSITable. This causes the
+          following changes.
+
+        - [incompatible change][removed] Remove attribute 'color_theme_args'.
+          Arguments now should be given to the border style class directly (see
+          next change item).
+
+        - [incompatible change] Attribute 'color_theme' now must be a string
+          (module name like 'Text::ANSITable::Default::Gradation', or a module
+          name followed by a list of comma-separated arguments a la Perl's -M
+          like 'Test::Random=cache,0') or a 2-element array containing module
+          name and arguments, e.g. ['Text::ANSITable::Default::Gradation', []]
+          or ['Test::Random', {cache=>0}]. 'color_theme' may no longer be a hash
+          containing color theme structure. You will have to create a proper
+          ColorTheme::* module if you want your own custom color theme.
+
+        - [incompatible change] Color theme names changed. See
+          ColorThemes-Standard or ColorThemes-Test distribution for a collection
+          of generic border styles. The Text-ANSITable distribution itself still
+          carries some color themes, now put in
+          ColorTheme::Text::ANSITable::Standard::* namespace. The default color
+          theme is now named 'Text::ANSITable::Standard::Gradation' (instead of
+          the old name 'Default::default_gradation'). You can still use the
+          'ansitable-list-color-themes' script or see the individual color theme
+          class to see how a color theme looks.
+
+
 0.501   2018-12-02  Released-By: PERLANCAR
 
 	- No functional changes.
