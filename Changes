@@ -1,3 +1,8 @@
+0.600   2020-09-13  Released-By: PERLANCAR
+
+        - Release after 2 development releases.
+
+
 0.599_002  2020-06-20  Released-By: PERLANCAR
 
         - [bugfix] Didn't set ANSI colors correctly (affected row/column/cell
