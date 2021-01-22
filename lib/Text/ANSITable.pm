@@ -825,22 +825,22 @@ sub _read_style_envs {
 }
 
 # determine which columns to show (due to column_filter)
-sub _calc_fcols {
+sub _calc_shown_cols {
     my $self = shift;
 
     my $cols = $self->{columns};
     my $cf   = $self->{column_filter};
 
-    my $fcols;
+    my $shown_cols;
     if (ref($cf) eq 'CODE') {
-        $fcols = [grep {$cf->($_)} @$cols];
+        $shown_cols = [grep {$cf->($_)} @$cols];
     } elsif (ref($cf) eq 'ARRAY') {
-        $fcols = [grep {defined} map {looks_like_number($_) ?
-                                          $cols->[$_] : $_} @$cf];
+        $shown_cols = [grep {defined}
+                           map {looks_like_number($_) ? $cols->[$_] : $_} @$cf];
     } else {
-        $fcols = $cols;
+        $shown_cols = $cols;
     }
-    $self->{_draw}{fcols} = $fcols;
+    $self->{_draw}{shown_cols} = $shown_cols;
 }
 
 # calculate widths/heights of header, store width settings, column [lr]pads
@@ -848,7 +848,7 @@ sub _calc_header_height {
     my $self = shift;
 
     my $cols  = $self->{columns};
-    my $fcols = $self->{_draw}{fcols};
+    my $shown_cols = $self->{_draw}{shown_cols};
 
     my $fcol_widths = []; # index = [colnum]
     my $header_height = 1;
@@ -861,7 +861,7 @@ sub _calc_header_height {
     my $lpad = $self->{cell_lpad} // $self->{cell_pad}; # tbl-lvl leftp
     my $rpad = $self->{cell_rpad} // $self->{cell_pad}; # tbl-lvl rightp
     for my $i (0..@$cols-1) {
-        next unless $cols->[$i] ~~ $fcols;
+        next unless $cols->[$i] ~~ $shown_cols;
         next if $seen{$cols->[$i]}++;
 
         $fcol_setwidths->[$i] = $self->get_eff_column_style($i, 'width') //
@@ -886,7 +886,7 @@ sub _calc_header_height {
 
 # determine which rows to show, calculate vertical paddings of data rows, store
 # height settings
-sub _calc_frows {
+sub _calc_shown_rows {
     my $self = shift;
 
     my $rows = $self->{rows};
@@ -895,7 +895,7 @@ sub _calc_frows {
 
     my $frow_tpads  = []; # index = [frownum]
     my $frow_bpads  = []; # ditto
-    my $frows = [];
+    my $shown_rows = [];
     my $frow_separators = [];
     my $frow_orig_indices = []; # needed when accessing original row data
 
@@ -913,7 +913,7 @@ sub _calc_frows {
         $j++;
         push @$frow_setheights, $self->get_eff_row_style($i, 'height') //
             $self->{cell_height};
-        push @$frows, [@$row]; # 1-level clone, for storing formatted values
+        push @$shown_rows, [@$row]; # 1-level clone, for storing formatted values
         push @$frow_separators, $j if $i ~~ $self->{_row_separators};
         push @$frow_tpads, $self->get_eff_row_style($i, 'tpad') //
             $self->get_eff_row_style($i, 'vpad') // $tpad;
@@ -922,7 +922,7 @@ sub _calc_frows {
         push @$frow_orig_indices, $i;
     }
 
-    $self->{_draw}{frows}             = $frows;
+    $self->{_draw}{shown_rows}             = $shown_rows;
     $self->{_draw}{frow_separators}   = $frow_separators;
     $self->{_draw}{frow_tpads}        = $frow_tpads;
     $self->{_draw}{frow_bpads}        = $frow_bpads;
@@ -945,7 +945,7 @@ sub _detect_column_types {
         $fcol_detect->[$i] = $res;
 
         # optim: skip detecting columns we're not showing
-        next unless $col ~~ $self->{_draw}{fcols};
+        next unless $col ~~ $self->{_draw}{shown_cols};
 
         # but detect from all rows, not just ones we're showing
         my $type = $self->get_eff_column_style($col, 'type');
@@ -1044,29 +1044,29 @@ sub _apply_column_formats {
     my $self = shift;
 
     my $cols  = $self->{columns};
-    my $frows = $self->{_draw}{frows};
-    my $fcols = $self->{_draw}{fcols};
+    my $shown_rows = $self->{_draw}{shown_rows};
+    my $shown_cols = $self->{_draw}{shown_cols};
     my $fcol_detect = $self->{_draw}{fcol_detect};
 
     my %seen;
     for my $i (0..@$cols-1) {
-        next unless $cols->[$i] ~~ $fcols;
+        next unless $cols->[$i] ~~ $shown_cols;
         next if $seen{$cols->[$i]}++;
         my @fmts = @{ $self->get_eff_column_style($i, 'formats') //
                           $fcol_detect->[$i]{formats} // [] };
         if (@fmts) {
             require Data::Unixish::Apply;
             my $res = Data::Unixish::Apply::apply(
-                in => [map {$frows->[$_][$i]} 0..@$frows-1],
+                in => [map {$shown_rows->[$_][$i]} 0..@$shown_rows-1],
                 functions => \@fmts,
             );
             croak "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
                 unless $res->[0] == 200;
             $res = $res->[2];
-            for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
+            for (0..@$shown_rows-1) { $shown_rows->[$_][$i] = $res->[$_] // "" }
         } else {
             # change null to ''
-            for (0..@$frows-1) { $frows->[$_][$i] //= "" }
+            for (0..@$shown_rows-1) { $shown_rows->[$_][$i] //= "" }
         }
     }
 }
@@ -1076,27 +1076,27 @@ sub _apply_cell_formats {
 
     my $cols  = $self->{columns};
     my $rows  = $self->{rows};
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
     my $frow_orig_indices = $self->{_draw}{frow_orig_indices};
 
-    for my $i (0..@$frows-1) {
+    for my $i (0..@$shown_rows-1) {
         my %seen;
         my $origi = $frow_orig_indices->[$i];
         for my $j (0..@$cols-1) {
-            next unless $cols->[$j] ~~ $fcols;
+            next unless $cols->[$j] ~~ $shown_cols;
             next if $seen{$cols->[$j]}++;
 
             my $fmts = $self->get_eff_cell_style($origi, $j, 'formats');
             if (defined $fmts) {
                 require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
-                    in => [ $frows->[$i][$j] ],
+                    in => [ $shown_rows->[$i][$j] ],
                     functions => $fmts,
                 );
                 croak "Can't format cell ($origi, $cols->[$j]): ".
                     "$res->[0] - $res->[1]" unless $res->[0] == 200;
-                $frows->[$i][$j] = $res->[2][0] // "";
+                $shown_rows->[$i][$j] = $res->[2][0] // "";
             }
         } # col
     }
@@ -1106,8 +1106,8 @@ sub _calc_row_widths_heights {
     my $self = shift;
 
     my $cols  = $self->{columns};
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
 
     my $frow_heights = [];
     my $fcol_widths  = $self->{_draw}{fcol_widths};
@@ -1117,15 +1117,15 @@ sub _calc_row_widths_heights {
     my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl tpad
     my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl bpad
     my $cswidths = [map {$self->get_eff_column_style($_, 'width')} 0..@$cols-1];
-    for my $i (0..@$frows-1) {
+    for my $i (0..@$shown_rows-1) {
         my %seen;
         my $origi = $frow_orig_indices->[$i];
         my $rsheight = $self->get_eff_row_style($origi, 'height');
         for my $j (0..@$cols-1) {
-            next unless $cols->[$j] ~~ $fcols;
+            next unless $cols->[$j] ~~ $shown_cols;
             next if $seen{$cols->[$j]}++;
 
-            my $wh = $self->_opt_calc_cell_width_height($i,$j,$frows->[$i][$j]);
+            my $wh = $self->_opt_calc_cell_width_height($i,$j,$shown_rows->[$i][$j]);
 
             $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
             $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
@@ -1139,23 +1139,23 @@ sub _wrap_wrappable_columns {
     my $self = shift;
 
     my $cols  = $self->{columns};
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
     my $fcol_detect    = $self->{_draw}{fcol_detect};
     my $fcol_setwidths = $self->{_draw}{fcol_setwidths};
 
     my %seen;
     for my $i (0..@$cols-1) {
-        next unless $cols->[$i] ~~ $fcols;
+        next unless $cols->[$i] ~~ $shown_cols;
         next if $seen{$cols->[$i]}++;
 
         if (($self->get_eff_column_style($i, 'wrap') // $self->{column_wrap} //
                  $fcol_detect->[$i]{wrap}) &&
                      defined($fcol_setwidths->[$i]) &&
                          $fcol_setwidths->[$i]>0) {
-            for (0..@$frows-1) {
-                $frows->[$_][$i] = $self->{_func_wrap}->(
-                    $frows->[$_][$i], $fcol_setwidths->[$i]);
+            for (0..@$shown_rows-1) {
+                $shown_rows->[$_][$i] = $self->{_func_wrap}->(
+                    $shown_rows->[$_][$i], $fcol_setwidths->[$i]);
             }
         }
     }
@@ -1165,8 +1165,8 @@ sub _calc_table_width_height {
     my $self = shift;
 
     my $cols  = $self->{columns};
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
     my $fcol_widths  = $self->{_draw}{fcol_widths};
     my $fcol_lpads   = $self->{_draw}{fcol_lpads};
     my $fcol_rpads   = $self->{_draw}{fcol_rpads};
@@ -1178,7 +1178,7 @@ sub _calc_table_width_height {
     $w += 1 if length($self->{border_style_obj}->get_border_char(3, 0));
     my $has_vsep = length($self->{border_style_obj}->get_border_char(3, 1));
     for my $i (0..@$cols-1) {
-        next unless $cols->[$i] ~~ $fcols;
+        next unless $cols->[$i] ~~ $shown_cols;
         $w += $fcol_lpads->[$i] + $fcol_widths->[$i] + $fcol_rpads->[$i];
         if ($i < @$cols-1) {
             $w += 1 if $has_vsep;
@@ -1195,7 +1195,7 @@ sub _calc_table_width_height {
     $h += $self->{header_bpad} // $self->{header_vpad} //
         $self->{cell_bpad} // $self->{cell_vpad};
     $h += 1 if length($self->{border_style_obj}->get_border_char(2, 0));
-    for my $i (0..@$frows-1) {
+    for my $i (0..@$shown_rows-1) {
         $h += ($frow_tpads->[$i] // 0) +
             ($frow_heights->[$i] // 0) +
                 ($frow_bpads->[$i] // 0);
@@ -1217,15 +1217,15 @@ sub _adjust_column_widths {
     # the content/header, but this will require another pass at the text to
     # analyze it.
 
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
     my $fcol_setwidths = $self->{_draw}{fcol_setwidths};
     my $fcol_detect    = $self->{_draw}{fcol_detect};
     my $fcol_widths    = $self->{_draw}{fcol_widths};
     my %acols;
     my %origw;
-    for my $i (0..@$fcols-1) {
-        my $ci = $self->_colnum($fcols->[$i]);
+    for my $i (0..@$shown_cols-1) {
+        my $ci = $self->_colnum($shown_cols->[$i]);
         next if defined($fcol_setwidths->[$ci]) && $fcol_setwidths->[$ci]>0;
         next if $fcol_widths->[$ci] < 30;
         next unless $self->get_eff_column_style($ci, 'wrap') //
@@ -1269,9 +1269,9 @@ sub _adjust_column_widths {
     # wrap and set setwidths so it doesn't grow again during recalculate
     for my $ci (keys %acols) {
         next unless $origw{$ci} != $fcol_widths->[$ci];
-        for (0..@$frows-1) {
-            $frows->[$_][$ci] = $self->{_func_wrap}->(
-                $frows->[$_][$ci], $fcol_setwidths->[$ci]);
+        for (0..@$shown_rows-1) {
+            $shown_rows->[$_][$ci] = $self->{_func_wrap}->(
+                $shown_rows->[$_][$ci], $fcol_setwidths->[$ci]);
         }
     }
 
@@ -1289,9 +1289,9 @@ sub _prepare_draw {
     $self->{_draw} = {};
 
     $self->_read_style_envs;
-    $self->_calc_fcols;
+    $self->_calc_shown_cols;
     $self->_calc_header_height;
-    $self->_calc_frows;
+    $self->_calc_shown_rows;
     $self->_detect_column_types;
     $self->_apply_column_formats;
     $self->_apply_cell_formats;
@@ -1363,7 +1363,7 @@ sub draw_border_char {
 sub _should_draw_row_separator {
     my ($self, $i) = @_;
 
-    return $i < @{$self->{_draw}{frows}}-1 &&
+    return $i < @{$self->{_draw}{shown_rows}}-1 &&
         (($self->{show_row_separator}==2 && $i~~$self->{_draw}{frow_separators})
              || $self->{show_row_separator}==1);
 }
@@ -1482,7 +1482,7 @@ sub _get_data_cell_lines {
 
     my $ct   = $self->{color_theme};
     my $oy   = $self->{_draw}{frow_orig_indices}[$y];
-    my $cell = $self->{_draw}{frows}[$y][$x];
+    my $cell = $self->{_draw}{shown_rows}[$y][$x];
     my $args = {table=>$self, row_num=>$y, col_num=>$x, data=>$cell,
                 orig_data=>$self->{rows}[$oy][$x]};
 
@@ -1561,8 +1561,8 @@ sub draw {
     $self->{_draw}{y} = 0; # current line
 
     my $cols  = $self->{columns};
-    my $fcols = $self->{_draw}{fcols};
-    my $frows = $self->{_draw}{frows};
+    my $shown_cols = $self->{_draw}{shown_cols};
+    my $shown_rows = $self->{_draw}{shown_rows};
     my $frow_heights    = $self->{_draw}{frow_heights};
     my $frow_tpads      = $self->{_draw}{frow_tpads};
     my $frow_bpads      = $self->{_draw}{frow_bpads};
@@ -1575,11 +1575,11 @@ sub draw {
         last unless length($self->{border_style_obj}->get_border_char(0, 0));
         my @b;
         push @b, 0, 0, 1;
-        for my $i (0..@$fcols-1) {
-            my $ci = $self->_colnum($fcols->[$i]);
+        for my $i (0..@$shown_cols-1) {
+            my $ci = $self->_colnum($shown_cols->[$i]);
             push @b, 0, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 0, 2, 1 if $i < @$fcols-1;
+            push @b, 0, 2, 1 if $i < @$shown_cols-1;
         }
         push @b, 0, 3, 1;
         $self->draw_border_char(@b);
@@ -1590,9 +1590,9 @@ sub draw {
     if ($self->{show_header}) {
         my %seen;
         my $hcell_lines = []; # index = [fcolnum]
-        if (@$fcols) {
-            for my $i (0..@$fcols-1) {
-                my $ci = $self->_colnum($fcols->[$i]);
+        if (@$shown_cols) {
+            for my $i (0..@$shown_cols-1) {
+                my $ci = $self->_colnum($shown_cols->[$i]);
                 if (defined($seen{$i})) {
                     $hcell_lines->[$i] = $hcell_lines->[$seen{$i}];
                 }
@@ -1606,10 +1606,10 @@ sub draw {
         #use Data::Dump; print "D:hcell_lines: "; dd $hcell_lines;
         for my $l (0..@{ $hcell_lines->[0] }-1) {
             $self->draw_border_char(1, 0);
-            for my $i (0..@$fcols-1) {
+            for my $i (0..@$shown_cols-1) {
                 $self->draw_str($hcell_lines->[$i][$l]);
                 $self->draw_color_reset;
-                $self->draw_border_char(1, 1) unless $i == @$fcols-1;
+                $self->draw_border_char(1, 1) unless $i == @$shown_cols-1;
             }
             $self->draw_border_char(1, 2);
             $self->draw_str("\n");
@@ -1620,11 +1620,11 @@ sub draw {
     if ($self->{show_header} && length($self->{border_style_obj}->get_border_char(2, 0))) {
         my @b;
         push @b, 2, 0, 1;
-        for my $i (0..@$fcols-1) {
-            my $ci = $self->_colnum($fcols->[$i]);
+        for my $i (0..@$shown_cols-1) {
+            my $ci = $self->_colnum($shown_cols->[$i]);
             push @b, 2, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 2, 2, 1 unless $i==@$fcols-1;
+            push @b, 2, 2, 1 unless $i==@$shown_cols-1;
         }
         push @b, 2, 3, 1;
         $self->draw_border_char(@b);
@@ -1633,13 +1633,13 @@ sub draw {
 
     # draw data rows
     {
-        for my $r (0..@$frows-1) {
+        for my $r (0..@$shown_rows-1) {
             #$self->draw_str("r$r");
             my $dcell_lines = []; # index = [fcolnum]
             my %seen;
-            if (@$fcols) {
-                for my $i (0..@$fcols-1) {
-                    my $ci = $self->_colnum($fcols->[$i]);
+            if (@$shown_cols) {
+                for my $i (0..@$shown_cols-1) {
+                    my $ci = $self->_colnum($shown_cols->[$i]);
                     if (defined($seen{$i})) {
                         $dcell_lines->[$i] = $dcell_lines->[$seen{$i}];
                     }
@@ -1653,11 +1653,11 @@ sub draw {
             #use Data::Dump; print "TMP: dcell_lines: "; dd $dcell_lines;
             for my $l (0..@{ $dcell_lines->[0] }-1) {
                 $self->draw_border_char({row_num=>$r}, 3, 0);
-                for my $i (0..@$fcols-1) {
+                for my $i (0..@$shown_cols-1) {
                     $self->draw_str($dcell_lines->[$i][$l]);
                     $self->draw_color_reset;
                     $self->draw_border_char({row_num=>$r}, 3, 1)
-                        unless $i == @$fcols-1;
+                        unless $i == @$shown_cols-1;
                 }
                 $self->draw_border_char({row_num=>$r}, 3, 2);
                 $self->draw_str("\n");
@@ -1667,12 +1667,12 @@ sub draw {
             if ($self->_should_draw_row_separator($r)) {
                 my @b;
                 push @b, 4, 0, 1;
-                for my $i (0..@$fcols-1) {
-                    my $ci = $self->_colnum($fcols->[$i]);
+                for my $i (0..@$shown_cols-1) {
+                    my $ci = $self->_colnum($shown_cols->[$i]);
                     push @b, 4, 1,
                         $fcol_lpads->[$ci] + $fcol_widths->[$ci] +
                             $fcol_rpads->[$ci];
-                    push @b, 4, $i==@$fcols-1 ? 3:2, 1;
+                    push @b, 4, $i==@$shown_cols-1 ? 3:2, 1;
                 }
                 $self->draw_border_char({row_num=>$r}, @b);
                 $self->draw_str("\n");
@@ -1685,11 +1685,11 @@ sub draw {
         last unless length($self->{border_style_obj}->get_border_char(5, 0));
         my @b;
         push @b, 5, 0, 1;
-        for my $i (0..@$fcols-1) {
-            my $ci = $self->_colnum($fcols->[$i]);
+        for my $i (0..@$shown_cols-1) {
+            my $ci = $self->_colnum($shown_cols->[$i]);
             push @b, 5, 1,
                 $fcol_lpads->[$ci] + $fcol_widths->[$ci] + $fcol_rpads->[$ci];
-            push @b, 5, 2, 1 unless $i == @$fcols-1;
+            push @b, 5, 2, 1 unless $i == @$shown_cols-1;
         }
         push @b, 5, 3, 1;
         $self->draw_border_char(@b);
@@ -2214,8 +2214,8 @@ of rows which should be shown, or a coderef which will be called for each row
 with arguments C<< ($row, $row_num) >> and should return a bool value indicating
 whether that row should be displayed.
 
-Internal note: During drawing, rows will be filtered and put into C<<
-$t->{_draw}{frows} >>.
+Internal note: During drawing, rows will be filtered and the rows to be shown
+will be put into C<< $t->{_draw}{shown_rows} >>.
 
 =head2 column_filter => CODE|ARRAY OF STR
 
@@ -2228,8 +2228,8 @@ should be displayed. The coderef version is more limited in that it cannot
 reorder the columns or instruct for the same column to be displayed more than
 once.
 
-Internal note: During drawing, column names will be filtered and put into C<<
-$t->{_draw}{fcols} >>.
+Internal note: During drawing, column names will be filtered and the columns
+that will be shown put into C<< $t->{_draw}{shown_cols} >>.
 
 =head2 column_wrap => BOOL
 
