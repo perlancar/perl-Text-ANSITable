@@ -2222,7 +2222,7 @@ $t->{_draw}{frows} >>.
 When drawing, only show columns that match this. Can be an array containing
 names of columns that should be displayed (column names can be in different
 order or duplicate, column can also be referred to with its numeric index). Can
-also be a coderef which will be called with C<< ($col_name, $colnum) >> for
+also be a coderef which will be called with C<< ($colname, $colnum) >> for
 every column and should return a bool value indicating whether that column
 should be displayed. The coderef version is more limited in that it cannot
 reorder the columns or instruct for the same column to be displayed more than
