@@ -1777,6 +1777,38 @@ specifying border styles, the order of characters are slightly different. More
 fine-grained options to customize appearance.
 
 
+=head1 REFERRING TO COLUMNS
+
+Columns can be referred to be integer number (0-based) or name (string). You
+should not have integer numbers as column names because that will be confusing.
+Example:
+
+ $t->columns(["col1", "col2", "col3"]); # col1=0, col2=1, col3=2
+ $t->add_row([...]);
+ ...
+
+ # set visible columns
+ $t->column_filter([1,2,1]); # col2, col3, col2
+ $t->column_filter(["col2","col3","col2"]); # same thing
+
+See also: L</REFERRING TO ROWS>.
+
+
+=head1 REFERRING TO ROWS
+
+Rows are referred to by integer number (0-based).
+
+ $t->columns(["name", "age", "gender"]);
+ $t->add_row(["marty", ...]); # first row (0)
+ $t->add_row(["wendy", ...]); # second row (1)
+ $t->add_row(["charlotte", ...]); # third row (2)
+
+ # set visible rows
+ $t->row_filter([0,2]); # marty & charlotte
+
+See also: L</REFERRING TO COLUMNS>.
+
+
 =head1 BORDER STYLES
 
 To list available border styles, just list the C<BorderStyle::*> modules. You
