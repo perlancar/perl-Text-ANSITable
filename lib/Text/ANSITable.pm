@@ -1325,6 +1325,7 @@ sub draw_theme_color {
 
 sub get_color_reset {
     my $self = shift;
+    return "" unless $self->use_color;
     return "" if $self->{color_theme_obj}->get_struct->{_no_color};
     "\e[0m";
 }
