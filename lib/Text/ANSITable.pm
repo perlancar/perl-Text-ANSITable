@@ -72,6 +72,11 @@ has columns => (
     default => sub { [] },
     trigger => sub {
         my $self = shift;
+
+        # check that column names are unique
+        my %seen;
+        for (@{$_[0]}) { die "Duplicate column name '$_'" if $seen{$_}++ }
+
         $self->{_columns_set}++;
     },
 );
@@ -2226,7 +2231,9 @@ examples.
 
 =head1 ATTRIBUTES
 
-=head2 columns => ARRAY OF STR
+=head2 columns
+
+Array of str. Must be unique.
 
 Store column names. Note that when drawing, you can omit some columns, reorder
 them, or display some more than once (see C<column_filter> attribute).
