@@ -52,7 +52,7 @@ has border_style => (
         my ($self, $val) = @_;
         $self->{border_style_obj} =
             Module::Load::Util::instantiate_class_with_optional_args(
-                {ns_prefixes=>['BorderStyle', 'BorderStyle::Text::ANSITable::OldCompat']}, $val);
+                {ns_prefixes=>['BorderStyle::Text::ANSITable', 'BorderStyle', 'BorderStyle::Text::ANSITable::OldCompat']}, $val);
     },
 );
 
@@ -63,7 +63,7 @@ has color_theme => (
         my ($self, $val) = @_;
         $self->{color_theme_obj} =
             Module::Load::Util::instantiate_class_with_optional_args(
-                {ns_prefixes=>['ColorTheme', 'ColorTheme::Text::ANSITable::OldCompat']}, $val);
+                {ns_prefixes=>['ColorTheme::Text::ANSITable', 'ColorTheme', 'ColorTheme::Text::ANSITable::OldCompat']}, $val);
     },
 );
 
@@ -282,10 +282,10 @@ sub BUILD {
         } elsif ($self->use_color) {
             my $bg = $self->detect_terminal->{default_bgcolor} // '';
             if ($self->color_depth >= 2**24) {
-                $ct = 'Text::ANSITable::Standard::Gradation' .
+                $ct = 'Standard::Gradation' .
                     ($bg eq 'ffffff' ? 'WhiteBG' : '');
             } else {
-                $ct = 'Text::ANSITable::Standard::NoGradation' .
+                $ct = 'Standard::NoGradation' .
                     ($bg eq 'ffffff' ? 'WhiteBG' : '');;
             }
         } else {
@@ -1717,7 +1717,7 @@ sub draw {
 
  # set styles
  $t->border_style('UTF8::SingleLineBold');  # if not, a nice default is picked
- $t->color_theme('Text::ANSITable::Standard::NoGradation');  # if not, a nice default is picked
+ $t->color_theme('Standard::NoGradation');  # if not, a nice default is picked
 
  # fill data
  $t->columns(["name"       , "color" , "price"]);
@@ -1860,13 +1860,13 @@ arguments:
  # during construction
  my $t = Text::ANSITable->new(
      ...
-     color_theme => "Text::ANSITable::Standard::NoGradation",
+     color_theme => "Standard::NoGradation",
      ...
  );
 
  # after the object is constructed
- $t->color_theme("Text::ANSITable::Standard::NoGradation");
- $t->color_theme(["Lens::Darken", {theme=>"Text::ANSITable::Standard::NoGradation"}]);
+ $t->color_theme("Standard::NoGradation");
+ $t->color_theme(["Lens::Darken", {theme=>"Standard::NoGradation"}]);
 
 If no color theme is selected explicitly, a nice default will be chosen. You can
 also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
@@ -2316,11 +2316,19 @@ disable wide-character support here.
 
 =head2 border_style => STR
 
-Border style name to use.
+Border style name to use. This is a module name in the
+C<BorderStyle::Text::ANSITable::*>, C<BorderStyle::*>, or
+C<BorderStyle::Text::ANSITable::OldCompat::*> namespace, without the prefix.
+See the L<BorderStyle> specification on how to create a new border style.
 
 =head2 color_theme => STR
 
-Color theme name to use.
+Color theme name to use. This is a module name in the
+C<ColorTheme::Text::ANSITable::*>, C<ColorTheme::*>, or
+C<ColorTheme::Text::ANSITable::OldCompat::*> namespace, without the prefix. See
+the L<ColorTheme> and an example existing color theme module like
+L<ColorTheme::Text::ANSITable::Standard::Gradation> specification on how to
+create a new border style.
 
 =head2 show_header => BOOL (default: 1)
 
