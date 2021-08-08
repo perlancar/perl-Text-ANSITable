@@ -52,7 +52,7 @@ has border_style => (
         my ($self, $val) = @_;
         $self->{border_style_obj} =
             Module::Load::Util::instantiate_class_with_optional_args(
-                {ns_prefix=>'BorderStyle'}, $val);
+                {ns_prefixes=>['BorderStyle', 'BorderStyle::Text::ANSITable::OldCompat']}, $val);
     },
 );
 
@@ -63,7 +63,7 @@ has color_theme => (
         my ($self, $val) = @_;
         $self->{color_theme_obj} =
             Module::Load::Util::instantiate_class_with_optional_args(
-                {ns_prefix=>'ColorTheme'}, $val);
+                {ns_prefixes=>['ColorTheme', 'ColorTheme::Text::ANSITable::OldCompat']}, $val);
     },
 );
 
