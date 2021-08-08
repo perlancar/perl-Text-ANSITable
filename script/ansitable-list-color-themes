@@ -16,7 +16,7 @@ my $t = Text::ANSITable->new;
 my @all_ct = $t->list_color_themes;
 my %all_ctobj;
 for my $ctname (@all_ct) {
-    say "D:$ctname";
+    #say "D:$ctname";
     my $info = instantiate_class_with_optional_args({ns_prefix=>"ColorTheme", construct=>0}, $ctname);
     my $class = $info->{class};
     my $struct = $class->get_struct;
@@ -61,4 +61,4 @@ print $t->draw;
 
 Sample output:
 
-# CODE: system $^X, "-Ilib", "script/ansitable-list-color-themes"; die "system() failed" if $?;
+# CODE: system $^X, "-Ilib", "script/ansitable-list-color-themes"; die "system() failed ($?)" if $?;
