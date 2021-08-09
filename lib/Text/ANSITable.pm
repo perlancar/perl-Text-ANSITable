@@ -16,6 +16,48 @@ use ColorThemeUtil::ANSI qw(item_color_to_ansi);
 use Scalar::Util 'looks_like_number';
 require Win32::Console::ANSI if $^O =~ /Win/;
 
+# see Module::Features for more details on this
+our %FEATURES = (
+    set_v => {
+        TextTable => 1,
+    },
+
+    features => {
+        TextTable => {
+            can_align_cell_containing_wide_character => 1,
+            can_align_cell_containing_color_code     => 1,
+            can_align_cell_containing_newline        => 1,
+            can_use_box_character                    => 1,
+            can_customize_border                     => 1,
+            can_halign                               => 1,
+            can_halign_individual_row                => 1,
+            can_halign_individual_column             => 1,
+            can_halign_individual_cell               => 1,
+            can_valign                               => 1,
+            can_valign_individual_row                => 1,
+            can_valign_individual_column             => 1,
+            can_valign_individual_cell               => 1,
+            can_rowspan                              => 0,
+            can_colspan                              => 0,
+            can_color                                => 1,
+            can_color_theme                          => 1,
+            can_set_cell_height                      => 1,
+            can_set_cell_height_of_individual_row    => 1,
+            can_set_cell_width                       => 1,
+            can_set_cell_width_of_individual_column  => 1,
+            speed                                    => 'slow',
+            can_hpad                                 => 1,
+            can_hpad_individual_row                  => 1,
+            can_hpad_individual_column               => 1,
+            can_hpad_individual_cell                 => 1,
+            can_vpad                                 => 1,
+            can_vpad_individual_row                  => 1,
+            can_vpad_individual_column               => 1,
+            can_vpad_individual_cell                 => 1,
+        },
+    },
+);
+
 my $ATTRS = [qw(
 
                   use_color color_depth use_box_chars use_utf8 columns rows
