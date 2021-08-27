@@ -23,6 +23,19 @@ our %FEATURES = (
     },
 
     features => {
+        PerlTrove => {
+            "Development Status" => "5 - Production/Stable",
+            "Environment" => "Console",
+            # Framework
+            "Intended Audience" => ["Developers"],
+            "License" => "OSI Approved :: Artistic License",
+            # Natural Language
+            # Operating System
+            "Programming Language" => "Perl",
+            "Topic" => ["Software Development :: Libraries :: Perl Modules", "Utilities"],
+            # Typing
+        },
+
         TextTable => {
             can_align_cell_containing_wide_character => 1,
             can_align_cell_containing_color_code     => 1,
