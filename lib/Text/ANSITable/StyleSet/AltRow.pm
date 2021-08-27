@@ -1,9 +1,6 @@
 package Text::ANSITable::StyleSet::AltRow;
 
-# DATE
-# VERSION
-
-use 5.010;
+use 5.010001;
 use Moo;
 use namespace::clean;
 
@@ -11,6 +8,11 @@ has odd_bgcolor  => (is => 'rw');
 has even_bgcolor => (is => 'rw');
 has odd_fgcolor  => (is => 'rw');
 has even_fgcolor => (is => 'rw');
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 sub summary {
     "Set different foreground and/or background color for odd/even rows";

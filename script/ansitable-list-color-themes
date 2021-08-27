@@ -1,14 +1,16 @@
 #!perl
 
-# DATE
-# VERSION
-
-use 5.010;
+use 5.010001;
 use strict;
 use warnings;
 
 use Module::Load::Util qw(instantiate_class_with_optional_args);
 use Text::ANSITable;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 binmode(STDOUT, ":encoding(utf8)");
 

@@ -1,3 +1,5 @@
+# no code
+## no critic: TestingAndDebugging::RequireUseStrict
 package ColorTheme::Text::ANSITable::Standard::GradationWhiteBG;
 
 # AUTHORITY

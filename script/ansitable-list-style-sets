@@ -1,13 +1,15 @@
 #!perl
 
-# DATE
-# VERSION
-
-use 5.010;
+use 5.010001;
 use strict;
 use warnings;
 
 use Text::ANSITable;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 binmode(STDOUT, ":encoding(utf8)");
 

@@ -1,3 +1,5 @@
+# no code
+## no critic: TestingAndDebugging::RequireUseStrict
 package ColorTheme::Text::ANSITable::OldCompat::Default::no_color;
 
 # AUTHORITY

@@ -1,10 +1,5 @@
 package Text::ANSITable;
 
-# AUTHORITY
-# DATE
-# DIST
-# VERSION
-
 use 5.010001;
 use Carp;
 use Log::ger;
@@ -15,6 +10,11 @@ use ColorThemeUtil::ANSI qw(item_color_to_ansi);
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
 require Win32::Console::ANSI if $^O =~ /Win/;
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
 
 # see Module::Features for more details on this
 our %FEATURES = (
@@ -732,7 +732,7 @@ sub apply_style_set {
     {
         my $name = $name;
         $name =~ s!::!/!g;
-        require "Text/ANSITable/StyleSet/$name.pm";
+        require "Text/ANSITable/StyleSet/$name.pm"; ## no critic: Modules::RequireBarewordIncludes
     }
     my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
     my $obj = "Text::ANSITable::StyleSet::$name"->new(%args);

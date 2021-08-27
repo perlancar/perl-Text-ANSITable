@@ -1,3 +1,5 @@
+# no code
+## no critic: TestingAndDebugging::RequireUseStrict
 package BorderStyle::Text::ANSITable::OldCompat::Default::spacei_utf8;
 
 # AUTHORITY
