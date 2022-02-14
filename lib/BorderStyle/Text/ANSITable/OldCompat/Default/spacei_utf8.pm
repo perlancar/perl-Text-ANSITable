@@ -11,3 +11,5 @@ use alias::module 'BorderStyle::UTF8::SpaceInnerOnly';
 
 1;
 # ABSTRACT: UTF8::SpaceInnerOnly border style (with old name)
+
+=for Pod::Coverage ^(.+)$

@@ -11,3 +11,5 @@ use alias::module 'BorderStyle::UTF8::None';
 
 1;
 # ABSTRACT: UTF8::None border style (with old name)
+
+=for Pod::Coverage ^(.+)$

@@ -11,3 +11,5 @@ use alias::module 'BorderStyle::ASCII::SpaceInnerOnly';
 
 1;
 # ABSTRACT: ASCII::SpaceInnerOnly border style (with old name)
+
+=for Pod::Coverage ^(.+)$

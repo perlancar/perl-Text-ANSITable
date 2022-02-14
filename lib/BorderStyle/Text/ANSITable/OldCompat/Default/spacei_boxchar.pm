@@ -11,3 +11,5 @@ use alias::module 'BorderStyle::BoxChar::SpaceInnerOnly';
 
 1;
 # ABSTRACT: BoxChar::SpaceInnerOnly border style (with old name)
+
+=for Pod::Coverage ^(.+)$
