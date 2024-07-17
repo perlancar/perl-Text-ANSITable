@@ -84,7 +84,7 @@
           styles and cell_fgcolor/cell_bgcolor).
 
 
-0.599_001  2020-06-16  Released-By: PERLANCAR; Backward-Compatible: no
+0.599_001  2020-06-16  Released-By: PERLANCAR; Backward-Incompatible: yes
 
         [border style]
 
