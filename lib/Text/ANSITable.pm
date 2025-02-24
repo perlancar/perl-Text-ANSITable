@@ -8,7 +8,8 @@ use Moo;
 use ColorThemeUtil::ANSI qw(item_color_to_ansi);
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
-require Win32::Console::ANSI if $^O =~ /Win/;
+require # hide from cpanspec
+    Win32::Console::ANSI if $^O =~ /Win/;
 
 # AUTHORITY
 # DATE
